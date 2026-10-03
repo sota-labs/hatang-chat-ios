@@ -1,0 +1,9 @@
+{
+  "t": "session",
+  "id": "r3",
+  "d": {
+    "visitor_token": "tok_merged",
+    "visitor_id": "vis_2",
+    "reason": "identity_merged"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "t": "availability",
+  "d": {
+    "online": false,
+    "within_hours": false,
+    "next_open_at": "2026-09-29T02:00:00.000Z",
+    "agents_online": 0
+  }
+}

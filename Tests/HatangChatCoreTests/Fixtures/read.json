@@ -1,0 +1,8 @@
+{
+  "t": "read",
+  "d": {
+    "conversation_id": "conv_1",
+    "side": "agent",
+    "up_to_seq": 1
+  }
+}

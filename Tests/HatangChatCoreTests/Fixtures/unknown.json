@@ -1,0 +1,8 @@
+{
+  "t": "home.dirty",
+  "d": {
+    "modules": [
+      "chat"
+    ]
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "t": "ready",
+  "d": {
+    "visitor": {
+      "id": "vis_1",
+      "site_id": "site_1",
+      "channel": "web",
+      "email": null,
+      "name": null,
+      "phone": null,
+      "avatar_url": null,
+      "external_id": null,
+      "custom_data": {},
+      "locale": "vi",
+      "browser": null,
+      "os": "ios",
+      "device": "iPhone",
+      "country": null,
+      "city": null,
+      "current_url": null,
+      "current_title": null,
+      "referrer": null,
+      "first_seen_at": "2026-09-27T10:00:00.000Z",
+      "last_seen_at": "2026-09-27T10:00:00.000Z",
+      "identified_at": null,
+      "utm": {},
+      "visits": 1,
+      "customer_id": null,
+      "client": "app",
+      "app": {
+        "id": "app_1",
+        "platform": "flutter",
+        "version": "1.0.0+1",
+        "sdk": "flutter/0.1.0"
+      },
+      "current_screen": "home"
+    },
+    "conversation": {
+      "id": "conv_1",
+      "site_id": "site_1",
+      "visitor_id": "vis_1",
+      "channel": "web",
+      "status": "open",
+      "assignee_kind": null,
+      "assignee_id": null,
+      "seq": 3,
+      "visitor_unread": 1,
+      "agent_unread": 0,
+      "last_message_at": "2026-09-27T10:05:00.000Z",
+      "last_message_preview": "Hello",
+      "last_message_sender_type": "agent",
+      "first_response_at": null,
+      "resolved_at": null,
+      "tags": [],
+      "member_ids": [],
+      "flag": null,
+      "subject": null,
+      "created_at": "2026-09-27T10:00:00.000Z",
+      "updated_at": "2026-09-27T10:05:00.000Z"
+    },
+    "timeline": [
+      {
+        "kind": "message",
+        "id": "m_1",
+        "conversation_id": "conv_1",
+        "seq": 1,
+        "sender_type": "visitor",
+        "sender_id": "x",
+        "sender_name": null,
+        "visibility": "public",
+        "content_type": "text",
+        "content": "Hi",
+        "attachments": [],
+        "client_id": "c1",
+        "metadata": {},
+        "read_at": null,
+        "created_at": "2026-09-27T10:01:00.000Z"
+      },
+      {
+        "kind": "event",
+        "id": "ev_2",
+        "conversation_id": "conv_1",
+        "seq": 2,
+        "type": "status_changed",
+        "actor_type": "agent",
+        "actor_id": "u1",
+        "data": {
+          "from": "open",
+          "to": "resolved"
+        },
+        "created_at": "2026-09-27T10:02:00.000Z"
+      },
+      {
+        "kind": "message",
+        "id": "m_3",
+        "conversation_id": "conv_1",
+        "seq": 3,
+        "sender_type": "agent",
+        "sender_id": "x",
+        "sender_name": "Lan",
+        "visibility": "public",
+        "content_type": "text",
+        "content": "Hello",
+        "attachments": [],
+        "client_id": null,
+        "metadata": {},
+        "read_at": null,
+        "created_at": "2026-09-27T10:03:00.000Z"
+      }
+    ],
+    "availability": {
+      "online": true,
+      "within_hours": true,
+      "next_open_at": null,
+      "agents_online": 1
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "t": "message.ack",
+  "id": "r1",
+  "d": {
+    "client_id": "c1",
+    "id": "m_1",
+    "seq": 1,
+    "conversation_id": "conv_1"
+  }
+}

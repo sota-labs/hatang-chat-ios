@@ -1,0 +1,8 @@
+{
+  "t": "error",
+  "id": "r4",
+  "d": {
+    "code": "rate_limit_exceeded",
+    "message": "You are sending messages too quickly"
+  }
+}

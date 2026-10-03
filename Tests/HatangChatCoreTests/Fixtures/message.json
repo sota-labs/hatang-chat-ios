@@ -1,0 +1,20 @@
+{
+  "t": "message",
+  "d": {
+    "kind": "message",
+    "id": "m_4",
+    "conversation_id": "conv_1",
+    "seq": 4,
+    "sender_type": "agent",
+    "sender_id": "x",
+    "sender_name": "Lan",
+    "visibility": "public",
+    "content_type": "text",
+    "content": "Reply **now** https://x.test/a",
+    "attachments": [],
+    "client_id": null,
+    "metadata": {},
+    "read_at": null,
+    "created_at": "2026-09-27T10:04:00.000Z"
+  }
+}

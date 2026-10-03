@@ -1,0 +1,9 @@
+{
+  "t": "typing",
+  "d": {
+    "conversation_id": "conv_1",
+    "side": "agent",
+    "on": true,
+    "name": "Lan"
+  }
+}
