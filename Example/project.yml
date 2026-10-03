@@ -1,0 +1,35 @@
+name: HatangChatExample
+options:
+  bundleIdPrefix: dev.hatang.chat
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+packages:
+  HatangChat:
+    path: ..
+targets:
+  HatangChatExample:
+    type: application
+    platform: iOS
+    sources:
+      - HatangChatExample
+    dependencies:
+      - package: HatangChat
+        product: HatangChat
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.hatang.chat.example
+        INFOPLIST_FILE: HatangChatExample/Info.plist
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+schemes:
+  HatangChatExample:
+    build:
+      targets:
+        HatangChatExample: all
+    run:
+      config: Debug

@@ -16,6 +16,7 @@ let package = Package(
         .target(name: "HatangChat", dependencies: ["HatangChatCore"]),
         .testTarget(name: "HatangChatCoreTests", dependencies: ["HatangChatCore"], resources: [.copy("Fixtures")]),
         .testTarget(name: "ConformanceTests", dependencies: ["HatangChatCore"]),
+        .testTarget(name: "HatangChatTests", dependencies: ["HatangChat"]),
     ],
     swiftLanguageModes: [.v6]
 )
