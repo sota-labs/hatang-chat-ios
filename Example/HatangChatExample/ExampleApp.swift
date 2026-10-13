@@ -9,10 +9,18 @@ struct ExampleApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView(demo: demo)
+            root
                 .onOpenURL { demo.handle($0) }
                 .onAppear { Automation.listen { demo.handle($0) } }
         }
+    }
+
+    @ViewBuilder private var root: some View {
+#if DEBUG
+        if Showcase.enabled { ShowcaseView(demo: demo) } else { ContentView(demo: demo) }
+#else
+        ContentView(demo: demo)
+#endif
     }
 }
 

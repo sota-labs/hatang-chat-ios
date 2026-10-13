@@ -55,8 +55,16 @@ final class Demo {
     func identify() async {
         guard HatangChat.isConfigured else { return }
         do {
-            try await HatangChat.identify(HatangUser(userId: "ios-demo-1", email: "ios-demo@example.com", name: "iOS Demo"))
-            status = "Identified as iOS Demo"
+            var user = HatangUser(userId: "ios-demo-1", email: "ios-demo@example.com", name: "iOS Demo")
+#if DEBUG
+            // Showcase footage: a signed identity passed as launch arguments (`-showcaseUserId … -showcaseHash …`).
+            let d = UserDefaults.standard
+            if let id = d.string(forKey: "showcaseUserId") {
+                user = HatangUser(userId: id, email: d.string(forKey: "showcaseEmail"), name: d.string(forKey: "showcaseName"), hash: d.string(forKey: "showcaseHash"))
+            }
+#endif
+            try await HatangChat.identify(user)
+            status = "Identified as \(user.name ?? "?")"
         } catch {
             status = "Identify failed: \(error.localizedDescription)"
         }
