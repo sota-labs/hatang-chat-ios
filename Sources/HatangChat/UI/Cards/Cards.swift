@@ -218,7 +218,7 @@ struct OrderCardView: View {
 }
 
 /// A payment request: amount, VietQR code, the copyable transfer note and "Pay". Paid and expired requests
-/// say so and hide the button. Without external checkout there is no QR and no web checkout.
+/// say so and hide the QR, the transfer note and the button. Without external checkout there is no QR and no web checkout.
 struct PaymentCardView: View {
     let card: PaymentCard
     let onPay: (PaymentCard) -> Void
@@ -230,7 +230,8 @@ struct PaymentCardView: View {
     var body: some View {
         let t = chat.theme
         let s = chat.strings
-        let paid = card.status == "paid" || card.status == "succeeded"
+        // Rows mark the card paid once the timeline has its `order_paid` (see `PaidPayments`).
+        let paid = PaidPayments.statusIsPaid(card.status)
         let expired = !paid && (card.status == "expired" || (card.expiresAt.map { $0 < Date() } ?? false))
         let canCheckout = externalCheckout && card.checkoutUrl.hasPrefix("http")
         let canPay = !paid && !expired && (canCheckout || hasPayHandler)
@@ -257,7 +258,7 @@ struct PaymentCardView: View {
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
                 }
-                if externalCheckout {
+                if externalCheckout && !paid {
                     CardLine(label: s.transferNote, value: card.code) {
                         if !paid {
                             Button {

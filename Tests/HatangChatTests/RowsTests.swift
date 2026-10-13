@@ -110,4 +110,20 @@ final class RowsTests: XCTestCase {
         let file = MessageDto(id: "f", senderType: .agent, content: "", createdAt: now, attachments: [Attachment(id: "a", name: "bill.pdf")])
         XCTAssertEqual(announcement(for: file, strings: strings, now: now), "\(strings.team): bill.pdf")
     }
+
+    func testPaymentCardTurnsPaidWhenTheOrderIsPaid() {
+        let card: JSONObject = ["kind": "payment", "payment": ["id": "pay1", "order_id": "ord1", "order_code": "DH1", "status": "pending", "amount": 5, "code": "NOTE"]]
+        func paymentStatus(_ rows: [ChatRow]) -> String? {
+            for case .message(let r) in rows { if case .payment(let p)? = r.card { return p.status } }
+            return nil
+        }
+        let pending = [msg("card", 1, .agent, at: now, metadata: card)]
+        XCTAssertEqual(paymentStatus(buildRows(state(pending), strings: strings, now: now, timeZone: utc)), "pending")
+        let byMessage = pending + [msg("paid", 2, .system, at: now, metadata: ["kind": "order_paid", "order_id": "ord1", "code": "DH1", "value": 5])]
+        XCTAssertEqual(paymentStatus(buildRows(state(byMessage), strings: strings, now: now, timeZone: utc)), "paid")
+        let byEvent = pending + [.event(ConversationEventDto(id: "e", conversationId: "c", seq: 2, type: "order_paid", createdAt: now, data: ["payment_id": "pay1"]))]
+        XCTAssertEqual(paymentStatus(buildRows(state(byEvent), strings: strings, now: now, timeZone: utc)), "paid")
+        let otherOrder = pending + [msg("paid", 2, .system, at: now, metadata: ["kind": "order_paid", "order_id": "ord2"])]
+        XCTAssertEqual(paymentStatus(buildRows(state(otherOrder), strings: strings, now: now, timeZone: utc)), "pending")
+    }
 }

@@ -214,3 +214,62 @@ public func cardBubbleText(_ content: String, card: MessageCard?, intro metadata
         return intro(before: start)
     }
 }
+
+/// Which payment cards of a timeline are paid. The stored card is not rewritten live when the customer pays:
+/// the gateway appends an `order_paid` event (`order_id`, `payment_id`, ...) and a system message with
+/// `metadata = {kind: "order_paid", order_id, ...}`. Shared rule, identical in every client: a card is paid
+/// when its own `status` is `paid` / `succeeded`, or the timeline holds an `order_paid` message for its order,
+/// or an `order_paid` event for its payment or its order.
+public struct PaidPayments: Sendable, Hashable {
+    /// Orders with an `order_paid` message or event.
+    public var orderIds: Set<String>
+    /// Payments named by an `order_paid` event.
+    public var paymentIds: Set<String>
+
+    public init(orderIds: Set<String> = [], paymentIds: Set<String> = []) {
+        self.orderIds = orderIds
+        self.paymentIds = paymentIds
+    }
+
+    /// Collects the `order_paid` messages and events of `items`.
+    public init(_ items: [TimelineItem]) {
+        var orders = Set<String>()
+        var payments = Set<String>()
+        func add(_ s: String?, to set: inout Set<String>) {
+            if let s, !s.isEmpty { set.insert(s) }
+        }
+        for item in items {
+            switch item {
+            case .message(let m):
+                guard let md = m.metadata, md.str("kind") == "order_paid" else { continue }
+                add(md.str("order_id"), to: &orders)
+            case .event(let e):
+                guard e.type == "order_paid" else { continue }
+                add(e.data.str("order_id"), to: &orders)
+                add(e.data.str("payment_id"), to: &payments)
+            }
+        }
+        self.init(orderIds: orders, paymentIds: payments)
+    }
+
+    /// Nothing paid in the timeline (cards still count their own status).
+    public static let none = PaidPayments()
+
+    /// The card's own status says paid.
+    public static func statusIsPaid(_ status: String) -> Bool { status == "paid" || status == "succeeded" }
+
+    /// `p` is paid by its own status or by the timeline.
+    public func isPaid(_ p: PaymentCard) -> Bool {
+        if Self.statusIsPaid(p.status) { return true }
+        if !p.id.isEmpty, paymentIds.contains(p.id) { return true }
+        if let o = p.orderId, !o.isEmpty, orderIds.contains(o) { return true }
+        return false
+    }
+
+    /// `card` with a payment the timeline shows as paid marked `paid`; anything else unchanged.
+    public func resolve(_ card: MessageCard?) -> MessageCard? {
+        guard case .payment(var p)? = card, !Self.statusIsPaid(p.status), isPaid(p) else { return card }
+        p.status = "paid"
+        return .payment(p)
+    }
+}

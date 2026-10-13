@@ -57,6 +57,8 @@ func buildRows(_ state: ChatState, strings: HatangChatStrings, now: Date = Date(
     }
     var lastDay: CalendarDay?
     let newestId = items.last?.id
+    // Payment cards are not rewritten live when the customer pays; the `order_paid` rows say so.
+    let paid = PaidPayments(items)
     for item in items {
         let day = dayOf(item.createdAt, timeZone: timeZone)
         if lastDay != day {
@@ -88,7 +90,7 @@ func buildRows(_ state: ChatState, strings: HatangChatStrings, now: Date = Date(
                     label = strings.aiLabel
                 }
             }
-            var card = mine ? nil : cardOf(m.metadata)
+            var card = mine ? nil : paid.resolve(cardOf(m.metadata))
             if case .quickReplies = card, m.id != newestId { card = nil }
             let askEmail = !mine && m.metadata?["kind"]?.stringValue == "email_request" && (state.visitorEmail ?? "").isEmpty
             // A card the SDK draws replaces the plain-text copy the gateway stores for other channels.
