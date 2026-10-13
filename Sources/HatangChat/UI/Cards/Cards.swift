@@ -234,7 +234,7 @@ struct PaymentCardView: View {
         let expired = !paid && (card.status == "expired" || (card.expiresAt.map { $0 < Date() } ?? false))
         let canCheckout = externalCheckout && card.checkoutUrl.hasPrefix("http")
         let canPay = !paid && !expired && (canCheckout || hasPayHandler)
-        let showQr = !paid && !expired && externalCheckout && !card.qrImageUrl.isEmpty
+        let showQr = !paid && !expired && externalCheckout && (!card.qrImageUrl.isEmpty || card.qrPayload != nil)
         let amount = money(card.amount, currency: card.currency, locale: chat.locale)
         CardFrame {
             VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -247,16 +247,10 @@ struct PaymentCardView: View {
                     if expired { StatusChip(label: s.expired, color: t.palette.muted, background: t.palette.raised) }
                 }
                 Text(amount).font(.title2.weight(.semibold).monospacedDigit()).foregroundStyle(t.palette.fg)
-                if showQr, let qr = URL(string: card.qrImageUrl) {
-                    AsyncImage(url: qr) { phase in
-                        if let img = phase.image { img.resizable().interpolation(.none).scaledToFit() } else { ProgressView() }
-                    }
-                    .frame(width: 184, height: 184)
-                    .padding(Spacing.sm)
-                    .background(Color.white, in: RoundedRectangle(cornerRadius: Radius.sm))
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, Spacing.sm)
-                    .accessibilityLabel("VietQR \(amount)")
+                if showQr {
+                    PaymentQRCodeView(card: card, label: "VietQR \(amount)")
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, Spacing.sm)
                     Text(s.scanToPay)
                         .font(.caption)
                         .foregroundStyle(t.palette.muted)
@@ -300,6 +294,74 @@ struct PaymentCardView: View {
             guard copied else { return }
             try? await Task.sleep(for: .seconds(2))
             copied = false
+        }
+    }
+}
+
+/// The VietQR code of a payment card, drawn natively from the EMVCo payload (the gateway serves the image as
+/// SVG, which iOS cannot decode). Shows a spinner while it looks the payload up and a retry button if that
+/// fails, never an endless spinner.
+struct PaymentQRCodeView: View {
+    let card: PaymentCard
+    let label: String
+    @Environment(\.chat) private var chat
+    @State private var phase: Phase = .loading
+    @State private var attempt = 0
+
+    enum Phase: Equatable {
+        case loading
+        case ready(UIImage)
+        case failed
+    }
+
+    var body: some View {
+        let t = chat.theme
+        Group {
+            switch phase {
+            case .loading:
+                ProgressView()
+            case .ready(let image):
+                Image(uiImage: image).resizable().interpolation(.none).scaledToFit().accessibilityLabel(label)
+            case .failed:
+                VStack(spacing: Spacing.sm) {
+                    Image(systemName: "qrcode")
+                        .font(.largeTitle)
+                        .foregroundStyle(Color.gray.opacity(0.5))
+                        .accessibilityHidden(true)
+                    Button(chat.strings.retry) { attempt += 1 }
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(chat.theme.readable(t.accent, on: .white))
+                        .frame(minHeight: minTouch)
+                }
+            }
+        }
+        .frame(width: 184, height: 184)
+        .padding(Spacing.sm)
+        .background(Color.white, in: RoundedRectangle(cornerRadius: Radius.sm))
+        .task(id: TaskKey(card: card.id, payload: card.qrPayload, url: card.qrImageUrl, attempt: attempt)) { await load() }
+    }
+
+    private struct TaskKey: Hashable {
+        let card: String
+        let payload: String?
+        let url: String
+        let attempt: Int
+    }
+
+    private func load() async {
+        if case .ready = phase { return }
+        phase = .loading
+        do {
+            let source = try await PaymentQR.resolve(card)
+            let image: UIImage? = switch source {
+            case .payload(let p): PaymentQR.image(payload: p).map { UIImage(cgImage: $0) }
+            case .image(let data): UIImage(data: data)
+            }
+            guard !Task.isCancelled else { return }
+            phase = image.map { .ready($0) } ?? .failed
+        } catch {
+            guard !Task.isCancelled else { return }
+            phase = .failed
         }
     }
 }
