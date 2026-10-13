@@ -91,8 +91,11 @@ func buildRows(_ state: ChatState, strings: HatangChatStrings, now: Date = Date(
             var card = mine ? nil : cardOf(m.metadata)
             if case .quickReplies = card, m.id != newestId { card = nil }
             let askEmail = !mine && m.metadata?["kind"]?.stringValue == "email_request" && (state.visitorEmail ?? "").isEmpty
+            // A card the SDK draws replaces the plain-text copy the gateway stores for other channels.
+            var shown = m
+            if card != nil { shown.content = cardBubbleText(m.content, card: card, intro: m.metadata?["intro"]?.stringValue) }
             rows.append(.message(MessageRow(
-                message: m,
+                message: shown,
                 mine: mine,
                 showSeen: mine && lastVisitorRead == m.seq,
                 senderLabel: label,

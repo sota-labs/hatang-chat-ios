@@ -62,6 +62,8 @@ public struct ProductCardItem: Sendable, Hashable {
 public struct ProductCard: Sendable, Hashable {
     /// Products (the widget shows at most five).
     public var products: [ProductCardItem]
+    /// The line the sender wrote above the products.
+    public var intro: String? = nil
 }
 
 /// One line of an order.
@@ -120,6 +122,9 @@ public struct PaymentCard: Sendable, Hashable {
     public var currency: String
     public var checkoutUrl: String
     public var qrImageUrl: String
+    /// The raw VietQR (EMVCo) string, when the card carries it (`qr_payload` or `qr.payload`). The SDK draws
+    /// the code from it natively; otherwise it looks the payload up from the checkout (see `PaymentQR`).
+    public var qrPayload: String?
     /// Transfer note.
     public var code: String
     public var status: String
@@ -136,6 +141,7 @@ public struct PaymentCard: Sendable, Hashable {
         currency = p.strOr("currency", "VND")
         checkoutUrl = p.strOr("checkout_url")
         qrImageUrl = p.strOr("qr_image_url")
+        qrPayload = (p.str("qr_payload") ?? p.obj("qr")?.str("payload")).flatMap { $0.isEmpty ? nil : $0 }
         code = p.strOr("code")
         expiresAt = p.date("expires_at")
         status = p.strOr("status")
@@ -161,7 +167,7 @@ public func cardOf(_ metadata: JSONObject?) -> MessageCard? {
     switch m.str("kind") {
     case "product":
         guard m["products"]?.arrayValue != nil else { return nil }
-        return .product(ProductCard(products: m.objList("products").map(ProductCardItem.init(json:))))
+        return .product(ProductCard(products: m.objList("products").map(ProductCardItem.init(json:)), intro: m.str("intro")))
     case "order":
         return m.obj("order").map { .order(OrderCard(json: $0)) }
     case "payment":
@@ -174,5 +180,37 @@ public func cardOf(_ metadata: JSONObject?) -> MessageCard? {
         return .csat(CsatCard(options: m.stringList("options"), answered: m.boolOr("answered")))
     default:
         return nil
+    }
+}
+
+/// The text to show in the bubble of a message that carries `card`.
+///
+/// The gateway always stores a plain-text rendering of product, order and payment cards in `content`
+/// (optionally after an intro line) so e-mail, previews, push and other channels make sense. The SDK draws
+/// those cards itself, so the plain-text copy is dropped and only the intro is kept: from `metadata.intro`
+/// (which the gateway sends with every card kind), or, for messages older than that, the lines before
+/// the order / payment summary. Quick replies and ratings keep the text (it is the question), and without
+/// a card the content is shown as is.
+public func cardBubbleText(_ content: String, card: MessageCard?, intro metadataIntro: String? = nil) -> String {
+    let lines = content.components(separatedBy: "\n")
+    func intro(before index: Int?) -> String {
+        guard let index else { return "" }
+        return lines[..<index].joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    switch card {
+    case nil, .quickReplies?, .csat?:
+        return content
+    case _ where metadataIntro != nil:
+        return metadataIntro!.trimmingCharacters(in: .whitespacesAndNewlines)
+    case .product(let c)?:
+        return c.intro?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    case .order(let c)?:
+        let head = "Đơn hàng \(c.code)"
+        return intro(before: lines.firstIndex { $0.trimmingCharacters(in: .whitespaces) == head })
+    case .payment?:
+        let start = lines.indices.first { i in
+            lines[i].hasPrefix("Thanh toán") && i + 1 < lines.count && lines[i + 1].hasPrefix("Quét mã VietQR")
+        }
+        return intro(before: start)
     }
 }

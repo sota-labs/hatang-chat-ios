@@ -74,6 +74,26 @@ final class RowsTests: XCTestCase {
         XCTAssertEqual(q.options, ["Yes", "No"])
     }
 
+    func testCardFallbackTextIsHiddenUnderARenderedCard() {
+        let order: JSONObject = ["kind": "order", "order": ["id": "o", "code": "DH1", "items": [], "total": 1]]
+        let unknown: JSONObject = ["kind": "survey", "id": "x"]
+        var s = state([
+            msg("a", 1, .bot, at: now, metadata: order),
+            msg("b", 2, .bot, at: now, metadata: unknown),
+        ])
+        s.timeline = Timeline(items: s.timeline.items.map {
+            guard case .message(var m) = $0 else { return $0 }
+            m.content = m.id == "a" ? "Đơn hàng DH1\nTổng: 1đ" : "Survey fallback"
+            return .message(m)
+        })
+        let rows = buildRows(s, strings: strings, now: now, timeZone: utc)
+        guard case .message(let a) = rows[1], case .message(let b) = rows[2] else { return XCTFail() }
+        XCTAssertNotNil(a.card)
+        XCTAssertEqual(a.message.content, "")
+        XCTAssertNil(b.card)
+        XCTAssertEqual(b.message.content, "Survey fallback")
+    }
+
     func testPendingRowsFollowTheTimeline() {
         var s = state([])
         s.pending = [PendingMessage(clientId: "x", content: "hi", createdAt: now)]
