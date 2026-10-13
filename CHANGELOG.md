@@ -4,6 +4,8 @@ All notable changes to the `HatangChat` Swift package are documented here. The f
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-13
+
 ### Fixed
 - A paid payment card no longer stays pending until the chat is reopened: the card shows "Paid" and drops the VietQR code, transfer note, expiry and "Pay" as soon as the timeline holds the order's `order_paid` system message or event (the stored card is not updated live).
 - Payment cards no longer spin forever on the VietQR code: the gateway serves it as SVG, which iOS cannot decode. The SDK now draws the code natively (CoreImage) from the EMVCo payload, taken from the card (`qr_payload` / `qr.payload`) or the public checkout (`GET /pay/{id}`); a raster `qr_image_url` still works. A failed load shows a retry button.
