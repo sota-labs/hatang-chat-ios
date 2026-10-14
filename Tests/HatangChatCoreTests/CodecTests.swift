@@ -220,6 +220,63 @@ final class CodecTests: XCTestCase {
         XCTAssertEqual(b.config.launcher.icon, .chat)
     }
 
+    func testSiteConfigWithoutHeaderGreetingOptionsOrContactsKeepsTodaysBehaviour() {
+        let c = BootstrapResponse(json: bootstrapFixture()).config
+        XCTAssertNil(c.header)
+        XCTAssertNil(c.greetingOptions)
+        XCTAssertEqual(c.contactButtons, [])
+        XCTAssertTrue(c.showsGreetingInApp)
+        XCTAssertNil(c.greetingSigner(online: true))
+        let j = c.toJSON()
+        XCTAssertNil(j["header"])
+        XCTAssertNil(j["greeting_options"])
+        XCTAssertNil(j["contact_buttons"])
+    }
+
+    func testSiteConfigHeaderGreetingOptionsAndContacts() throws {
+        let text = #"""
+        {"site_id":"s","name":"Shop","greeting":{"vi":"Chào","en":"Hi"},
+         "agent_avatars":[{"name":"Lan","avatar_url":"https://x/lan.png"},{"name":"Minh","avatar_url":null}],
+         "header":{"subtitle":{"vi":"Trả lời trong vài phút","en":" "},"logo_url":"https://x/logo.png","profile":"business"},
+         "greeting_options":{"enabled":true,"on_mobile":false,"sender":"online_agent","teaser_seconds":8},
+         "contact_buttons":[
+           {"kind":"zalo","url":"https://zalo.me/123","label":"Shop OA"},
+           {"kind":"messenger","url":"https://m.me/shop","label":"Shop"},
+           {"kind":"phone","url":"tel:+84901234567","label":"0901 234 567"},
+           {"kind":"email","url":"mailto:hi@shop.vn","label":"hi@shop.vn"},
+           {"kind":"phone","url":"javascript:alert(1)","label":"bad"},
+           {"kind":"telegram","url":"https://t.me/shop","label":"tg"},
+           "junk"
+         ]}
+        """#
+        let c = try JSONDecoder().decode(SiteConfig.self, from: Data(text.utf8))
+        let h = try XCTUnwrap(c.header)
+        XCTAssertEqual(h.profile, .business)
+        XCTAssertEqual(h.logoUrl, "https://x/logo.png")
+        XCTAssertEqual(h.subtitleFor(.vi), "Trả lời trong vài phút")
+        XCTAssertNil(h.subtitleFor(.en))
+        XCTAssertEqual(c.greetingOptions, GreetingOptions(enabled: true, onMobile: false, sender: .onlineAgent, teaserSeconds: 8))
+        XCTAssertFalse(c.showsGreetingInApp)
+        XCTAssertEqual(c.greetingSigner(online: true), "Lan")
+        XCTAssertNil(c.greetingSigner(online: false))
+        XCTAssertEqual(c.agentAvatars.map(\.avatarUrl), ["https://x/lan.png", nil])
+        XCTAssertEqual(c.contactButtons.map(\.kind), [.zalo, .messenger, .phone, .email, .phone, .unknown])
+        XCTAssertEqual(c.contactButtons.filter(\.isOpenable).map(\.url), [
+            "https://zalo.me/123", "https://m.me/shop", "tel:+84901234567", "mailto:hi@shop.vn",
+        ])
+        // Round trip.
+        XCTAssertEqual(SiteConfig(json: c.toJSON()).header, c.header)
+        XCTAssertEqual(SiteConfig(json: c.toJSON()).greetingOptions, c.greetingOptions)
+        XCTAssertEqual(SiteConfig(json: c.toJSON()).contactButtons, c.contactButtons)
+        XCTAssertEqual(c.toJSON().obj("greeting_options")?.str("sender"), "online_agent")
+        // Lenient: wrong types and unknown values fall back.
+        let odd = SiteConfig(json: try XCTUnwrap(JSONValue.parse(#"{"header":{"profile":"team","subtitle":3},"greeting_options":{},"contact_buttons":{}}"#)?.objectValue))
+        XCTAssertEqual(odd.header, HeaderConfig())
+        XCTAssertEqual(odd.greetingOptions, GreetingOptions())
+        XCTAssertTrue(odd.showsGreetingInApp)
+        XCTAssertEqual(odd.contactButtons, [])
+    }
+
     func testEncodeAddsVAndId() {
         let j = json(encodeFrame(.resume(conversationId: "c", afterSeq: 3), id: "x1"))
         XCTAssertEqual(j.t, "resume")

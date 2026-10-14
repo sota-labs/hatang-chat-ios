@@ -13,10 +13,10 @@ final class I18nTests: XCTestCase {
     func testViAndEnHaveEveryKeyNonEmpty() {
         let vi = HatangChatStrings.vi.map
         let en = HatangChatStrings.en.map
-        XCTAssertEqual(vi.count, 76)
+        XCTAssertEqual(vi.count, 78)
         XCTAssertEqual(Set(vi.keys), Set(en.keys))
         XCTAssertEqual(Set(HatangChatStrings.keys), Set(vi.keys))
-        XCTAssertEqual(HatangChatStrings.keys.count, 76)
+        XCTAssertEqual(HatangChatStrings.keys.count, 78)
         for (k, v) in vi { XCTAssertFalse(v.trimmingCharacters(in: .whitespaces).isEmpty, "vi.\(k) is empty") }
         for (k, v) in en { XCTAssertFalse(v.trimmingCharacters(in: .whitespaces).isEmpty, "en.\(k) is empty") }
         // The flat map covers every stored property.

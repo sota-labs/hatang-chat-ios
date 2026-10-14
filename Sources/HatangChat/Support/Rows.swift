@@ -19,8 +19,8 @@ struct MessageRow: Hashable, Sendable {
 enum ChatRow: Hashable, Sendable, Identifiable {
     /// "Today" / "Yesterday" / a date.
     case day(label: String, day: CalendarDay)
-    /// The site greeting while the conversation is empty.
-    case greeting(String)
+    /// The site greeting while the conversation is empty, signed by an online agent when the site asks.
+    case greeting(String, sender: String?)
     /// A message bubble.
     case message(MessageRow)
     /// A system line (notice, handoff, rated).
@@ -50,7 +50,7 @@ func buildRows(_ state: ChatState, strings: HatangChatStrings, now: Date = Date(
     var rows: [ChatRow] = []
     let locale = state.locale
     let items = state.timeline.items
-    if items.isEmpty, let g = state.config?.greetingFor(locale), !g.isEmpty { rows.append(.greeting(g)) }
+    if items.isEmpty, let row = greetingRow(state.config, online: state.online, locale: locale) { rows.append(row) }
     var lastVisitorRead = 0
     for case .message(let m) in items where m.isMine && m.readAt != nil && m.seq > lastVisitorRead {
         lastVisitorRead = m.seq
@@ -109,6 +109,13 @@ func buildRows(_ state: ChatState, strings: HatangChatStrings, now: Date = Date(
     for p in state.pending { rows.append(.pending(p)) }
     if let t = state.typingAgent { rows.append(.typing(t)) }
     return rows
+}
+
+/// The greeting row for an empty conversation: nil when the site has none or turned it off for phones,
+/// signed by the first online agent when the site asks for it.
+func greetingRow(_ config: SiteConfig?, online: Bool, locale: HatangLocale) -> ChatRow? {
+    guard let config, config.showsGreetingInApp, let g = config.greetingFor(locale), !g.isEmpty else { return nil }
+    return .greeting(g, sender: config.greetingSigner(online: online))
 }
 
 /// The newest message from the team worth announcing to VoiceOver: not local, not older than two minutes.

@@ -3,7 +3,7 @@ import HatangChatCore
 import PhotosUI
 import SwiftUI
 
-/// The conversation without a navigation bar: banners, away notice, message list (or the pre-chat form),
+/// The conversation without a navigation bar: contact buttons, banners, away notice, message list (or the pre-chat form),
 /// composer and branding line. Marks the conversation visible while on screen.
 struct ConversationBody: View {
     let model: HatangChatModel
@@ -21,7 +21,11 @@ struct ConversationBody: View {
         let state = model.state
         let t = chat.theme
         let away = state.online ? nil : state.config?.awayMessageFor(state.locale)
+        let contacts = state.config?.contactButtons.filter(\.isOpenable) ?? []
         VStack(spacing: 0) {
+            if !contacts.isEmpty {
+                ContactButtonsRow(buttons: contacts)
+            }
             ConnectionBanners(
                 state: state,
                 onReconnect: { model.run { await $0.connect() } },

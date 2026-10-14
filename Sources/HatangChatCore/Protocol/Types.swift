@@ -116,6 +116,32 @@ public enum LauncherIcon: String, WireEnum {
     public static var fallback: LauncherIcon { .chat }
 }
 
+/// Who the chat header shows: the online agents' faces or the business logo.
+public enum HeaderProfile: String, WireEnum {
+    case agents, business
+
+    public static var fallback: HeaderProfile { .agents }
+}
+
+/// Who signs the greeting.
+public enum GreetingSender: String, WireEnum {
+    /// Nobody (a plain team greeting).
+    case none
+    /// The first online agent, as if they wrote it.
+    case onlineAgent = "online_agent"
+
+    public static var fallback: GreetingSender { .none }
+}
+
+/// Another way to reach the business.
+public enum ContactKind: String, WireEnum {
+    case zalo, messenger, phone, email
+    /// A kind this SDK version does not know.
+    case unknown
+
+    public static var fallback: ContactKind { .unknown }
+}
+
 // MARK: - Attachment
 
 /// A file attached to a message.
@@ -949,6 +975,148 @@ public struct LauncherConfig: Codable, Sendable, Hashable {
     public func encode(to encoder: any Encoder) throws { try encodeObject(toJSON(), encoder) }
 }
 
+/// The chat header: a subtitle per language, the business logo, and whether it shows the business or the
+/// online agents.
+public struct HeaderConfig: Codable, Sendable, Hashable {
+    /// Subtitle per locale; empty means none.
+    public var subtitle: [String: String]
+    /// https logo shown when `profile` is `business`.
+    public var logoUrl: String?
+    /// Business logo or agent faces.
+    public var profile: HeaderProfile
+
+    enum CodingKeys: String, CodingKey {
+        case subtitle, profile
+        case logoUrl = "logo_url"
+    }
+
+    public init(subtitle: [String: String] = [:], logoUrl: String? = nil, profile: HeaderProfile = .agents) {
+        self.subtitle = subtitle
+        self.logoUrl = logoUrl
+        self.profile = profile
+    }
+
+    /// The subtitle for `locale`, or nil when empty (no fallback to the other language).
+    public func subtitleFor(_ locale: HatangLocale) -> String? {
+        guard let s = subtitle[locale.code]?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty else { return nil }
+        return s
+    }
+
+    public init(json j: JSONObject) {
+        self.init(
+            subtitle: j.stringMap(CodingKeys.subtitle.rawValue),
+            logoUrl: j.str(CodingKeys.logoUrl.rawValue),
+            profile: HeaderProfile.parse(j.str(CodingKeys.profile.rawValue))
+        )
+    }
+
+    public func toJSON() -> JSONObject {
+        compact(
+            (CodingKeys.subtitle.rawValue, .object(subtitle.mapValues(JSONValue.string))),
+            (CodingKeys.logoUrl.rawValue, logoUrl.json),
+            (CodingKeys.profile.rawValue, profile.code.json)
+        )
+    }
+
+    public init(from decoder: any Decoder) throws { self.init(json: try decodeObject(decoder)) }
+    public func encode(to encoder: any Encoder) throws { try encodeObject(toJSON(), encoder) }
+}
+
+/// When the greeting shows and who signs it.
+public struct GreetingOptions: Codable, Sendable, Hashable {
+    /// Show the greeting at all.
+    public var enabled: Bool
+    /// Show it on phones (apps count as phones).
+    public var onMobile: Bool
+    /// Who signs it.
+    public var sender: GreetingSender
+    /// Web only: seconds before the greeting pops over the closed launcher (0 = never).
+    public var teaserSeconds: Int
+
+    enum CodingKeys: String, CodingKey {
+        case enabled, sender
+        case onMobile = "on_mobile"
+        case teaserSeconds = "teaser_seconds"
+    }
+
+    public init(enabled: Bool = true, onMobile: Bool = true, sender: GreetingSender = .none, teaserSeconds: Int = 0) {
+        self.enabled = enabled
+        self.onMobile = onMobile
+        self.sender = sender
+        self.teaserSeconds = teaserSeconds
+    }
+
+    public init(json j: JSONObject) {
+        typealias K = CodingKeys
+        self.init(
+            enabled: j.bool(K.enabled.rawValue) ?? true,
+            onMobile: j.bool(K.onMobile.rawValue) ?? true,
+            sender: GreetingSender.parse(j.str(K.sender.rawValue)),
+            teaserSeconds: j.intOr(K.teaserSeconds.rawValue)
+        )
+    }
+
+    public func toJSON() -> JSONObject {
+        typealias K = CodingKeys
+        return compact(
+            (K.enabled.rawValue, enabled.json),
+            (K.onMobile.rawValue, onMobile.json),
+            (K.sender.rawValue, sender.code.json),
+            (K.teaserSeconds.rawValue, teaserSeconds.json)
+        )
+    }
+
+    public init(from decoder: any Decoder) throws { self.init(json: try decodeObject(decoder)) }
+    public func encode(to encoder: any Encoder) throws { try encodeObject(toJSON(), encoder) }
+}
+
+/// A button under the header that leaves the chat for another channel (Zalo OA, Messenger page, phone,
+/// email). The gateway resolves `url` to `https://zalo.me/…`, `https://m.me/…`, `tel:…` or `mailto:…`.
+public struct ContactButton: Codable, Sendable, Hashable {
+    /// Channel.
+    public var kind: ContactKind
+    /// Link to open.
+    public var url: String
+    /// Label (the Zalo OA or page name).
+    public var label: String
+
+    enum CodingKeys: String, CodingKey {
+        case kind, url, label
+    }
+
+    public init(kind: ContactKind = .unknown, url: String = "", label: String = "") {
+        self.kind = kind
+        self.url = url
+        self.label = label
+    }
+
+    /// A known kind with an `https:`, `tel:` or `mailto:` link; anything else is not shown.
+    public var isOpenable: Bool {
+        guard kind != .unknown else { return false }
+        let u = url.lowercased()
+        return u.hasPrefix("https:") || u.hasPrefix("tel:") || u.hasPrefix("mailto:")
+    }
+
+    public init(json j: JSONObject) {
+        self.init(
+            kind: ContactKind.parse(j.str(CodingKeys.kind.rawValue)),
+            url: j.strOr(CodingKeys.url.rawValue),
+            label: j.strOr(CodingKeys.label.rawValue)
+        )
+    }
+
+    public func toJSON() -> JSONObject {
+        compact(
+            (CodingKeys.kind.rawValue, kind.code.json),
+            (CodingKeys.url.rawValue, url.json),
+            (CodingKeys.label.rawValue, label.json)
+        )
+    }
+
+    public init(from decoder: any Decoder) throws { self.init(json: try decodeObject(decoder)) }
+    public func encode(to encoder: any Encoder) throws { try encodeObject(toJSON(), encoder) }
+}
+
 /// Site settings the widget and SDK render from.
 public struct SiteConfig: Codable, Sendable, Hashable {
     public var siteId: String
@@ -972,15 +1140,21 @@ public struct SiteConfig: Codable, Sendable, Hashable {
     public var theme: SiteTheme
     /// The AI assistant answers first.
     public var botEnabled: Bool
-    /// Team members for the header.
+    /// Online team members for the header.
     public var agentAvatars: [AgentAvatar]
     /// How the launcher button looks.
     public var launcher: LauncherConfig
+    /// Header subtitle, logo and profile; nil from older gateways.
+    public var header: HeaderConfig?
+    /// Greeting display; nil from older gateways (the greeting always shows).
+    public var greetingOptions: GreetingOptions?
+    /// Other ways to reach the business, in display order.
+    public var contactButtons: [ContactButton]
     /// The full wire payload (campaigns, social proof, ...).
     public var raw: JSONObject
 
     enum CodingKeys: String, CodingKey {
-        case name, color, position, greeting, theme, launcher
+        case name, color, position, greeting, theme, launcher, header
         case siteId = "site_id"
         case localeDefault = "locale_default"
         case awayMessage = "away_message"
@@ -988,6 +1162,8 @@ public struct SiteConfig: Codable, Sendable, Hashable {
         case hideWhenOffline = "hide_when_offline"
         case botEnabled = "bot_enabled"
         case agentAvatars = "agent_avatars"
+        case greetingOptions = "greeting_options"
+        case contactButtons = "contact_buttons"
     }
 
     public init(
@@ -1004,6 +1180,9 @@ public struct SiteConfig: Codable, Sendable, Hashable {
         botEnabled: Bool = false,
         agentAvatars: [AgentAvatar] = [],
         launcher: LauncherConfig = LauncherConfig(),
+        header: HeaderConfig? = nil,
+        greetingOptions: GreetingOptions? = nil,
+        contactButtons: [ContactButton] = [],
         raw: JSONObject = [:]
     ) {
         self.siteId = siteId
@@ -1019,11 +1198,29 @@ public struct SiteConfig: Codable, Sendable, Hashable {
         self.botEnabled = botEnabled
         self.agentAvatars = agentAvatars
         self.launcher = launcher
+        self.header = header
+        self.greetingOptions = greetingOptions
+        self.contactButtons = contactButtons
         self.raw = raw
     }
 
     /// Greeting for `locale`, falling back to the other language.
     public func greetingFor(_ locale: HatangLocale) -> String? { SiteConfig.pick(greeting, locale) }
+
+    /// Whether the greeting shows in an app (apps count as phones): always when the gateway sends no
+    /// `greeting_options`, else only when it is enabled and on for phones.
+    public var showsGreetingInApp: Bool {
+        guard let g = greetingOptions else { return true }
+        return g.enabled && g.onMobile
+    }
+
+    /// The name that signs the greeting: the first online agent's, when the site asks for it and the team is
+    /// online; nil otherwise.
+    public func greetingSigner(online: Bool) -> String? {
+        guard greetingOptions?.sender == .onlineAgent, online,
+              let name = agentAvatars.first?.name, !name.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }
+        return name
+    }
 
     /// Away message for `locale`, falling back to the other language.
     public func awayMessageFor(_ locale: HatangLocale) -> String? { SiteConfig.pick(awayMessage, locale) }
@@ -1052,6 +1249,9 @@ public struct SiteConfig: Codable, Sendable, Hashable {
             botEnabled: j.boolOr(K.botEnabled.rawValue),
             agentAvatars: j.objList(K.agentAvatars.rawValue).map(AgentAvatar.init(json:)),
             launcher: j.obj(K.launcher.rawValue).map(LauncherConfig.init(json:)) ?? LauncherConfig(),
+            header: j.obj(K.header.rawValue).map(HeaderConfig.init(json:)),
+            greetingOptions: j.obj(K.greetingOptions.rawValue).map(GreetingOptions.init(json:)),
+            contactButtons: j.objList(K.contactButtons.rawValue).map(ContactButton.init(json:)),
             raw: j
         )
     }
@@ -1072,7 +1272,10 @@ public struct SiteConfig: Codable, Sendable, Hashable {
             (K.theme.rawValue, theme.code.json),
             (K.botEnabled.rawValue, botEnabled.json),
             (K.agentAvatars.rawValue, .array(agentAvatars.map { .object($0.toJSON()) })),
-            (K.launcher.rawValue, .object(launcher.toJSON()))
+            (K.launcher.rawValue, .object(launcher.toJSON())),
+            (K.header.rawValue, header.map { .object($0.toJSON()) }),
+            (K.greetingOptions.rawValue, greetingOptions.map { .object($0.toJSON()) }),
+            (K.contactButtons.rawValue, contactButtons.isEmpty ? nil : .array(contactButtons.map { .object($0.toJSON()) }))
         )
         return raw.merging(fields) { _, new in new }
     }

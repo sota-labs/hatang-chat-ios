@@ -20,7 +20,34 @@ final class RowsTests: XCTestCase {
     func testGreetingWhenEmpty() {
         var s = state([])
         s.config = SiteConfig(greeting: ["en": "Hi there"])
-        XCTAssertEqual(buildRows(s, strings: strings, now: now, timeZone: utc), [.greeting("Hi there")])
+        XCTAssertEqual(buildRows(s, strings: strings, now: now, timeZone: utc), [.greeting("Hi there", sender: nil)])
+    }
+
+    func testGreetingFollowsTheSiteOptions() {
+        let agents = [AgentAvatar(name: "Lan"), AgentAvatar(name: "Minh")]
+        let base = SiteConfig(greeting: ["en": "Hi there"], agentAvatars: agents)
+        // Older gateways send no options: always shown, unsigned.
+        XCTAssertEqual(greetingRow(base, online: true, locale: .en), .greeting("Hi there", sender: nil))
+        var c = base
+        c.greetingOptions = GreetingOptions(enabled: false, onMobile: true)
+        XCTAssertNil(greetingRow(c, online: true, locale: .en))
+        c.greetingOptions = GreetingOptions(enabled: true, onMobile: false)
+        XCTAssertNil(greetingRow(c, online: true, locale: .en))
+        c.greetingOptions = GreetingOptions(enabled: true, onMobile: true)
+        XCTAssertEqual(greetingRow(c, online: true, locale: .en), .greeting("Hi there", sender: nil))
+        c.greetingOptions = GreetingOptions(enabled: true, onMobile: true, sender: .onlineAgent)
+        XCTAssertEqual(greetingRow(c, online: true, locale: .en), .greeting("Hi there", sender: "Lan"))
+        XCTAssertEqual(greetingRow(c, online: false, locale: .en), .greeting("Hi there", sender: nil))
+        c.agentAvatars = []
+        XCTAssertEqual(greetingRow(c, online: true, locale: .en), .greeting("Hi there", sender: nil))
+        XCTAssertNil(greetingRow(SiteConfig(), online: true, locale: .en))
+        XCTAssertNil(greetingRow(nil, online: true, locale: .en))
+    }
+
+    func testNoGreetingRowOnceTheConversationHasItems() {
+        var s = state([msg("a", 1, .visitor, at: now)])
+        s.config = SiteConfig(greeting: ["en": "Hi there"])
+        XCTAssertFalse(buildRows(s, strings: strings, now: now, timeZone: utc).contains { $0.id == "greeting" })
     }
 
     func testDaySeparatorsSeenAndLabels() {

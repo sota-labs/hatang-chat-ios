@@ -159,6 +159,10 @@ public struct HatangChatStrings: Sendable, Hashable {
     public var errorGeneric: String
     /// Dismiss action.
     public var dismiss: String
+    /// Contact button: phone.
+    public var call: String
+    /// Contact button: email.
+    public var emailUs: String
 
     public init(
         open: String,
@@ -236,7 +240,9 @@ public struct HatangChatStrings: Sendable, Hashable {
         permissionDenied: String,
         messageFrom: String,
         errorGeneric: String,
-        dismiss: String
+        dismiss: String,
+        call: String,
+        emailUs: String
     ) {
         self.open = open
         self.close = close
@@ -314,6 +320,8 @@ public struct HatangChatStrings: Sendable, Hashable {
         self.messageFrom = messageFrom
         self.errorGeneric = errorGeneric
         self.dismiss = dismiss
+        self.call = call
+        self.emailUs = emailUs
     }
 
     /// The flat key order of `map` (plural variants under `unread_one` / `unread_other`).
@@ -394,6 +402,8 @@ public struct HatangChatStrings: Sendable, Hashable {
         "messageFrom",
         "errorGeneric",
         "dismiss",
+        "call",
+        "emailUs",
     ]
 
     /// Flat map of every string (plural variants under `unread_one` / `unread_other`), for `t`.
@@ -475,6 +485,8 @@ public struct HatangChatStrings: Sendable, Hashable {
             "messageFrom": messageFrom,
             "errorGeneric": errorGeneric,
             "dismiss": dismiss,
+            "call": call,
+            "emailUs": emailUs,
         ]
     }
 
@@ -571,7 +583,9 @@ public struct HatangChatStrings: Sendable, Hashable {
         permissionDenied: "Ứng dụng chưa được cấp quyền",
         messageFrom: "Tin nhắn từ {name}",
         errorGeneric: "Có lỗi xảy ra. Vui lòng thử lại.",
-        dismiss: "Bỏ qua"
+        dismiss: "Bỏ qua",
+        call: "Gọi điện",
+        emailUs: "Email"
     )
 
     /// English.
@@ -651,7 +665,9 @@ public struct HatangChatStrings: Sendable, Hashable {
         permissionDenied: "The app was not granted permission",
         messageFrom: "Message from {name}",
         errorGeneric: "Something went wrong. Please try again.",
-        dismiss: "Dismiss"
+        dismiss: "Dismiss",
+        call: "Call us",
+        emailUs: "Email"
     )
 
 }

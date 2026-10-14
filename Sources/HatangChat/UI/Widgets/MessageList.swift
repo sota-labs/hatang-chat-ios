@@ -106,8 +106,8 @@ struct MessageList: View {
         switch row {
         case .day(let label, _):
             DaySeparator(label: label)
-        case .greeting(let text):
-            MessageBubble(message: MessageDto(id: "greeting", senderType: .bot, content: text, createdAt: Date()), mine: false)
+        case .greeting(let text, let sender):
+            MessageBubble(message: MessageDto(id: "greeting", senderType: .bot, content: text, createdAt: Date()), mine: false, senderLabel: sender)
         case .system(_, let text):
             SystemLine(text: text)
         case .message(let r):
