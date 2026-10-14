@@ -4,6 +4,8 @@ All notable changes to the `HatangChat` Swift package are documented here. The f
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-14
+
 ### Added
 - The chat follows more of the site's widget settings (dashboard: Hỗ trợ → Kênh → chọn site), no code needed: the header subtitle under the site name, the business logo instead of the agents' faces (or the site name's first letter), agent photos in the header, contact buttons (Zalo, Messenger, phone, email) as a row of pills under the header that open the matching app, and the greeting on/off and on-phones switches. A greeting signed by an online agent shows that agent's name under it while the team is online.
 - `SiteConfig.header` (`HeaderConfig`, `HeaderProfile`), `SiteConfig.greetingOptions` (`GreetingOptions`, `GreetingSender`), `SiteConfig.contactButtons` (`ContactButton`, `ContactKind`), `SiteConfig.showsGreetingInApp` and `SiteConfig.greetingSigner(online:)` in `HatangChatCore`. All are optional on the wire: older gateways keep today's behaviour.
