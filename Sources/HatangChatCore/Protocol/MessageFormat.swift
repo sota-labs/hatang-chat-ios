@@ -42,7 +42,7 @@ private func splitBy(_ s: String, _ re: NSRegularExpression) -> [Part] {
     return parts
 }
 
-/// Tokenises `text`: links, `**bold**`, `_italic_`, `` `code` `` and line breaks. HTML is never interpreted.
+/// Tokenises `text`: links, `**bold**`, `_italic_`, inline code between backticks and line breaks. HTML is never interpreted.
 public func formatMessage(_ text: String) -> [FormatToken] {
     var out: [FormatToken] = []
     let normalized = text.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n")
