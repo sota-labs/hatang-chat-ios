@@ -6,7 +6,7 @@ Native support chat for iOS apps: SwiftUI chat view, inbox and launcher, a UIKit
 - `HatangChat`: the iOS facade and UI.
 - `Example/`: demo app (`make project && open HatangChatExample.xcodeproj`), defaults to the local gateway at `http://localhost:3002`.
 
-Requirements: iOS 17+, Xcode 16+ (Swift 6). User docs: https://docs.hatang.dev/sdk/ios. Distributed from the public mirror https://github.com/sota-labs/hatang-chat-ios (the monorepo's `sdks/ios`).
+Requirements: iOS 17+, Xcode 16+ (Swift 6). User docs: https://hatang.dev/docs/guides/getting-started/introduction Distributed from the public mirror https://github.com/sota-labs/hatang-chat-ios (the monorepo's `sdks/ios`).
 
 ## Development
 
