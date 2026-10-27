@@ -1,6 +1,6 @@
-# Hatang Chat for iOS (`HatangChat`)
+# Ha Tang Chat for iOS (`HatangChat`)
 
-Native support chat for iOS apps: SwiftUI chat view, inbox and launcher, a UIKit view controller, signed identity, attachments, push helpers. Talks the Hatang realtime protocol directly; no dependencies beyond the system frameworks.
+Native support chat for iOS apps: SwiftUI chat view, inbox and launcher, a UIKit view controller, signed identity, attachments, push helpers. Talks the Ha Tang realtime protocol directly; no dependencies beyond the system frameworks.
 
 - `HatangChatCore`: Foundation only (protocol, REST, WebSocket, `ChatEngine` actor). Builds and tests on macOS too.
 - `HatangChat`: the iOS facade and UI.

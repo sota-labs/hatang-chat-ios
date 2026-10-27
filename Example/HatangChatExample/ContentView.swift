@@ -26,7 +26,7 @@ struct ContentView: View {
                 }
                 .font(.footnote)
             }
-            .navigationTitle(model.config?.name ?? "Hatang Chat")
+            .navigationTitle(model.config?.name ?? "Ha Tang Chat")
             .toolbar {
                 Button("Settings", systemImage: "gearshape") { settings = true }
             }
