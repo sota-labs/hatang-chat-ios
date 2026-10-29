@@ -38,6 +38,12 @@ public struct ProductCardItem: Sendable, Hashable {
     public var appStoreProductId: String?
     /// Google Play product id, when the shop sells this through in-app purchase.
     public var googlePlayProductId: String?
+    /// Google Play subscriptions: the base plan and offer to buy.
+    public var basePlanId: String?
+    public var offerId: String?
+    /// Subscriptions: ISO 8601 billing period (`P1M`, `P1Y`…) and free trial days.
+    public var billingPeriod: String?
+    public var trialDays: Int?
 
     /// Sold through in-app purchase on at least one store.
     public var hasStoreProduct: Bool { appStoreProductId != nil || googlePlayProductId != nil }
@@ -55,6 +61,10 @@ public struct ProductCardItem: Sendable, Hashable {
         sku = j.str("sku")
         appStoreProductId = store.str("app_store")
         googlePlayProductId = store.str("google_play")
+        basePlanId = j.str("base_plan_id")
+        offerId = j.str("offer_id")
+        billingPeriod = j.str("billing_period")
+        trialDays = j.num("trial_days").map { Int($0) }
     }
 }
 

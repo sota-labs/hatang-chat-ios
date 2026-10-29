@@ -261,6 +261,13 @@ public final class WidgetAPI: Sendable {
         try await tolerate404 { _ = try await send("PUT", "/devices", body: device.toJSON(), token: token) }
     }
 
+    /// Reports a finished store purchase (an internal note for the team). A gateway without the endpoint (404) returns false.
+    @discardableResult
+    public func postPurchase(token: String, platform: String, storeProductId: String, transactionId: String?, conversationId: String?, amount: Double?, currency: String?) async throws -> Bool {
+        let body = compact(("platform", platform.json), ("store_product_id", storeProductId.json), ("transaction_id", transactionId?.json), ("conversation_id", conversationId?.json), ("amount", amount.map { .number($0) }), ("currency", currency?.json))
+        return try await tolerate404 { _ = try await send("POST", "/purchases", body: body, token: token) }
+    }
+
     /// Removes a push token. A gateway without the endpoint (404) returns false.
     @discardableResult
     public func deleteDevice(token: String, pushToken: String) async throws -> Bool {

@@ -340,6 +340,21 @@ public enum HatangChat {
         await current?.engine.setPushToken(fcmToken, provider: .fcm)
     }
 
+    // MARK: - In-app purchases
+
+    /// The app account token for one of your users: pass it as `.appAccountToken(_:)` when buying with StoreKit
+    /// so App Store Server Notifications reach this customer in Hatang. Needs `configure` first.
+    public static func purchaseToken(userId: String) -> UUID? {
+        guard let siteId = current?.api.siteId else { return nil }
+        return PurchaseToken.make(siteId: siteId, userId: userId)
+    }
+
+    /// After a successful in-app purchase: an internal note for the team (the App Store confirms the subscription).
+    @discardableResult
+    public static func reportPurchase(storeProductId: String, transactionId: String? = nil, amount: Double? = nil, currency: String? = nil) async -> Bool {
+        await current?.engine.reportPurchase(storeProductId: storeProductId, transactionId: transactionId, amount: amount, currency: currency) ?? false
+    }
+
     /// Unregisters the push token (sign-out).
     public static func clearPushToken() async {
         pendingPushToken = nil

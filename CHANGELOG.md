@@ -4,6 +4,12 @@ All notable changes to the `HatangChat` Swift package are documented here. The f
 
 ## [Unreleased]
 
+### Added
+
+- `HatangChat.purchaseToken(userId:)`: the app account token to pass as StoreKit's `.appAccountToken`, so App Store Server Notifications reach the customer in Hatang.
+- `HatangChat.reportPurchase(storeProductId:transactionId:amount:currency:)`: a note for the team after a successful in-app purchase.
+- `ProductCardItem.basePlanId`, `offerId`, `billingPeriod`, `trialDays`; cards in the app carry the App Store price set for the product.
+
 ## [0.3.0] - 2026-10-14
 
 ### Added

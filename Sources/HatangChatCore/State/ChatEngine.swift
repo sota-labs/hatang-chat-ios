@@ -1391,6 +1391,16 @@ public actor ChatEngine {
         await setPushToken(apnsDeviceToken.map { String(format: "%02x", $0) }.joined(), provider: .apns)
     }
 
+    /// Tells the team a store purchase finished: an internal note in the conversation. App Store Server
+    /// Notifications record the subscription itself. False without a session or on an older gateway.
+    @discardableResult
+    public func reportPurchase(storeProductId: String, transactionId: String? = nil, amount: Double? = nil, currency: String? = nil, platform: String = "ios") async -> Bool {
+        if disposed { return false }
+        await ensureLoaded()
+        guard let token = currentToken else { return false }
+        return (try? await api.postPurchase(token: token, platform: platform, storeProductId: storeProductId, transactionId: transactionId, conversationId: st.conversation?.id, amount: amount, currency: currency)) ?? false
+    }
+
     /// Unregisters the push token (`DELETE devices`), e.g. on sign-out.
     public func clearPushToken() async {
         if disposed { return }

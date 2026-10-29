@@ -114,4 +114,19 @@ final class CardsTests: XCTestCase {
         XCTAssertEqual(paid.resolve(.quickReplies(QuickRepliesCard(options: ["a"]))), .quickReplies(QuickRepliesCard(options: ["a"])))
         XCTAssertNil(paid.resolve(nil))
     }
+
+    func testSubscriptionCardFieldsAndPurchaseToken() {
+        guard case .product(let c) = cardOf(json("""
+        {"kind":"product","products":[{"id":"p1","name":"Pro","price":4.99,"currency":"USD","store_product_ids":{"app_store":null,"google_play":"pro"},"base_plan_id":"monthly","offer_id":"trial-7d","billing_period":"P1M","trial_days":7}]}
+        """)) else { return XCTFail() }
+        let p = c.products[0]
+        XCTAssertEqual(p.price, 4.99)
+        XCTAssertEqual(p.basePlanId, "monthly")
+        XCTAssertEqual(p.offerId, "trial-7d")
+        XCTAssertEqual(p.billingPeriod, "P1M")
+        XCTAssertEqual(p.trialDays, 7)
+        // The same token as the server (packages/shared purchaseAccountToken).
+        XCTAssertEqual(PurchaseToken.uuidv5("www.example.com", namespace: UUID(uuidString: "6BA7B810-9DAD-11D1-80B4-00C04FD430C8")!).uuidString.lowercased(), "2ed6657d-e927-568b-95e1-2665a8aea6a2")
+        XCTAssertEqual(PurchaseToken.make(siteId: "site_01abc", userId: "user-42").uuidString.lowercased(), "9dd98643-eeb0-58e4-942d-74b3e1ec654b")
+    }
 }
