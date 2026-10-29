@@ -7,7 +7,7 @@ All notable changes to the `HatangChat` Swift package are documented here. The f
 ### Added
 
 - `HatangChat.purchaseToken(userId:)`: the app account token to pass as StoreKit's `.appAccountToken`, so App Store Server Notifications reach the customer in Hatang.
-- `HatangChat.reportPurchase(storeProductId:transactionId:amount:currency:)`: a note for the team after a successful in-app purchase.
+- `HatangChat.reportPurchase(storeProductId:transactionId:signedTransaction:amount:currency:)`: after a successful in-app purchase. With `signedTransaction` (StoreKit 2 `jwsRepresentation`) Hatang verifies it with Apple and records it on the customer; the team also gets a note.
 - `ProductCardItem.basePlanId`, `offerId`, `billingPeriod`, `trialDays`; cards in the app carry the App Store price set for the product.
 
 ## [0.3.0] - 2026-10-14

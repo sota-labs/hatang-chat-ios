@@ -261,10 +261,12 @@ public final class WidgetAPI: Sendable {
         try await tolerate404 { _ = try await send("PUT", "/devices", body: device.toJSON(), token: token) }
     }
 
-    /// Reports a finished store purchase (an internal note for the team). A gateway without the endpoint (404) returns false.
+    /// Reports a finished store purchase: verified with the store when `signedTransaction` (iOS) or `purchaseToken`
+    /// (Android) is given, plus an internal note for the team. A gateway without the endpoint (404) returns false.
     @discardableResult
-    public func postPurchase(token: String, platform: String, storeProductId: String, transactionId: String?, conversationId: String?, amount: Double?, currency: String?) async throws -> Bool {
-        let body = compact(("platform", platform.json), ("store_product_id", storeProductId.json), ("transaction_id", transactionId?.json), ("conversation_id", conversationId?.json), ("amount", amount.map { .number($0) }), ("currency", currency?.json))
+    public func postPurchase(token: String, platform: String, storeProductId: String, transactionId: String?, conversationId: String?, amount: Double?, currency: String?, signedTransaction: String? = nil, purchaseToken: String? = nil, productType: String? = nil) async throws -> Bool {
+        let body = compact(("platform", platform.json), ("store_product_id", storeProductId.json), ("transaction_id", transactionId?.json), ("conversation_id", conversationId?.json), ("amount", amount.map { .number($0) }), ("currency", currency?.json),
+                           ("signed_transaction", signedTransaction?.json), ("purchase_token", purchaseToken?.json), ("product_type", productType?.json))
         return try await tolerate404 { _ = try await send("POST", "/purchases", body: body, token: token) }
     }
 

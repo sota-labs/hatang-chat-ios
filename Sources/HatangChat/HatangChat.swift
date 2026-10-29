@@ -349,10 +349,11 @@ public enum HatangChat {
         return PurchaseToken.make(siteId: siteId, userId: userId)
     }
 
-    /// After a successful in-app purchase: an internal note for the team (the App Store confirms the subscription).
+    /// After a successful in-app purchase. Pass `signedTransaction` (the StoreKit 2 `VerificationResult.jwsRepresentation`)
+    /// so Hatang verifies it with Apple and records it for this person; the team also gets an internal note.
     @discardableResult
-    public static func reportPurchase(storeProductId: String, transactionId: String? = nil, amount: Double? = nil, currency: String? = nil) async -> Bool {
-        await current?.engine.reportPurchase(storeProductId: storeProductId, transactionId: transactionId, amount: amount, currency: currency) ?? false
+    public static func reportPurchase(storeProductId: String, transactionId: String? = nil, signedTransaction: String? = nil, amount: Double? = nil, currency: String? = nil) async -> Bool {
+        await current?.engine.reportPurchase(storeProductId: storeProductId, transactionId: transactionId, signedTransaction: signedTransaction, amount: amount, currency: currency) ?? false
     }
 
     /// Unregisters the push token (sign-out).

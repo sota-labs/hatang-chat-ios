@@ -1391,14 +1391,15 @@ public actor ChatEngine {
         await setPushToken(apnsDeviceToken.map { String(format: "%02x", $0) }.joined(), provider: .apns)
     }
 
-    /// Tells the team a store purchase finished: an internal note in the conversation. App Store Server
-    /// Notifications record the subscription itself. False without a session or on an older gateway.
+    /// Reports a finished store purchase: with `signedTransaction` (StoreKit 2 JWS) Hatang verifies it with Apple and
+    /// records it for this person; the team also gets an internal note in the conversation. False without a
+    /// session, on an older gateway, or when the store refuses it.
     @discardableResult
-    public func reportPurchase(storeProductId: String, transactionId: String? = nil, amount: Double? = nil, currency: String? = nil, platform: String = "ios") async -> Bool {
+    public func reportPurchase(storeProductId: String, transactionId: String? = nil, signedTransaction: String? = nil, amount: Double? = nil, currency: String? = nil, platform: String = "ios") async -> Bool {
         if disposed { return false }
         await ensureLoaded()
         guard let token = currentToken else { return false }
-        return (try? await api.postPurchase(token: token, platform: platform, storeProductId: storeProductId, transactionId: transactionId, conversationId: st.conversation?.id, amount: amount, currency: currency)) ?? false
+        return (try? await api.postPurchase(token: token, platform: platform, storeProductId: storeProductId, transactionId: transactionId, conversationId: st.conversation?.id, amount: amount, currency: currency, signedTransaction: signedTransaction)) ?? false
     }
 
     /// Unregisters the push token (`DELETE devices`), e.g. on sign-out.
