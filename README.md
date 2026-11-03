@@ -32,6 +32,7 @@ Releases: `just release ios <version>` then push the `ios-v<version>` tag; `.git
 - Guide: [Ha Tang chat SDK for iOS](https://hatang.dev/docs/guides/sdks/ios) ([Tiếng Việt](https://hatang.dev/vi/docs/guides/sdks/ios))
 - API reference: [HatangChat](https://hatang.dev/docs/reference/ios/documentation)
 - REST API: [hatang.dev/docs/reference/api](https://hatang.dev/docs/reference/api)
+- AI coding agents: [MCP server and rules](https://hatang.dev/docs/guides/getting-started/ai-agents)
 - Changelog: [hatang.dev/docs/changelog](https://hatang.dev/docs/changelog)
 - Support: [hatang.dev/contact](https://hatang.dev/contact)
 <!-- hatang:about:end -->
