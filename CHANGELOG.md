@@ -4,6 +4,10 @@ All notable changes to the `HatangChat` Swift package are documented here. The f
 
 ## [Unreleased]
 
+### Changed
+
+- The package ships a LICENSE file (MIT), and the README opens with what the SDK is and ends with an About Ha Tang section.
+
 ## [0.4.0] - 2026-10-31
 
 ### Added
