@@ -172,6 +172,9 @@ public struct Attachment: Codable, Sendable, Hashable {
     /// The attachment is an image.
     public var isImage: Bool { type.hasPrefix("image/") }
 
+    /// The attachment is a video (mp4 or .mov), played in place.
+    public var isVideo: Bool { isVideoUpload(mimeType: type, name: name) }
+
     /// Parses the wire shape.
     public init(json j: JSONObject) {
         self.init(

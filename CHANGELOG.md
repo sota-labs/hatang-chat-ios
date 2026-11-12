@@ -4,6 +4,13 @@ All notable changes to the `HatangChat` Swift package are documented here. The f
 
 ## [Unreleased]
 
+### Added
+
+- Customers can send videos: the photo library picker offers videos next to photos; a picked clip is loaded as a file and compressed on the device to an H.264 mp4 (720p, then medium quality if still too big) so a typical phone clip fits the new 25 MB video limit. `.mov` files from the file picker are converted the same way. Other files stay at 10 MB.
+- Video attachments show as a tile with a frame from the clip and a play glyph; tapping plays it full screen with AVKit. A video still uploading shows its frame, name and size.
+- `HatangChatCore`: `Limits.videoBytes` (25 MB), `isVideoUpload(mimeType:name:)`, `attachmentLimit(mimeType:name:)`, `attachmentTooLargeError(mimeType:name:)`, `UploadSource.isVideo`, `UploadSource.maxBytes`, `Attachment.isVideo`; `video/quicktime` (`.mov`) joins `uploadMimeTypes`. `ChatEngine.attach` refuses videos over 25 MB with `video_too_large`.
+- `HatangChatStrings.videoTooLarge` ("Video quá lớn (tối đa 25 MB). Hãy quay ngắn hơn hoặc giảm chất lượng." / "Video is too large (max 25 MB). Record a shorter clip or lower the quality."). The memberwise `HatangChatStrings.init` takes it as a new trailing argument with an English default.
+
 ## [0.4.1] - 2026-11-03
 
 ### Changed

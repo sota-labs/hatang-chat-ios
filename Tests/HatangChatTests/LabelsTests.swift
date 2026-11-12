@@ -16,6 +16,8 @@ final class LabelsTests: XCTestCase {
         XCTAssertEqual(errorText(nil, strings: s), s.errorGeneric)
         XCTAssertEqual(errorText(HatangError(code: "rate_limit_exceeded", message: "x"), strings: s), s.rateLimited)
         XCTAssertEqual(errorText(HatangError(code: "file_too_large", message: "x"), strings: s), s.tooLarge)
+        XCTAssertEqual(errorText(HatangError(code: "video_too_large", message: "x"), strings: s), "Video quá lớn (tối đa 25 MB). Hãy quay ngắn hơn hoặc giảm chất lượng.")
+        XCTAssertEqual(HatangChatStrings.en.videoTooLarge, "Video is too large (max 25 MB). Record a shorter clip or lower the quality.")
         XCTAssertEqual(errorText(HatangError(code: "timeout", message: "x"), strings: s), s.sendFailed)
         XCTAssertEqual(errorText(HatangError(code: "network_error", message: "x"), strings: s), s.errorGeneric)
         XCTAssertEqual(errorText(HatangError(code: "other", message: "Boom"), strings: s), "Boom")

@@ -1,4 +1,5 @@
 #if os(iOS)
+import AVKit
 import HatangChatCore
 import SwiftUI
 import UIKit
@@ -27,7 +28,7 @@ extension Attachment {
 }
 
 /// One attachment of a sent or received message: a tappable thumbnail for pictures (opens the viewer), a
-/// file row for everything else (opens it in the browser or Quick Look via the signed link).
+/// tile with a play glyph for videos (plays full screen), a file row for everything else (opens it in the browser or Quick Look via the signed link).
 struct AttachmentView: View {
     let attachment: Attachment
     let foreground: Color
@@ -69,6 +70,16 @@ struct AttachmentView: View {
             .accessibilityLabel(a.name)
             .accessibilityHint(chat.strings.openFile)
             .accessibilityAddTraits(.isImage)
+        } else if a.isVideo, let url = URL(string: a.url ?? ""), !(a.url ?? "").isEmpty {
+            Button {
+                openImage.open(a)
+            } label: {
+                VideoTile(source: .remote(url), side: min(thumb, 300))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(a.name), \(fileSizeLabel(a.size))")
+            .accessibilityHint(chat.strings.openFile)
+            .accessibilityAddTraits(.startsMediaSession)
         } else {
             FileRow(
                 symbol: symbolFor(a.type),
@@ -82,7 +93,7 @@ struct AttachmentView: View {
     }
 }
 
-/// The file of a message still uploading: a local preview for pictures, a file row otherwise, plus progress.
+/// The file of a message still uploading: a local preview for pictures and videos, a file row otherwise, plus progress.
 struct PendingAttachmentView: View {
     let upload: PendingUpload
     let foreground: Color
@@ -108,6 +119,18 @@ struct PendingAttachmentView: View {
                     let data = src.data
                     preview = await Task.detached { ImageScaling.thumbnail(data, maxPixel: 600).map { UIImage(cgImage: $0) } }.value
                 }
+            } else if src.isVideo {
+                VideoTile(source: .local(src.data, name: src.name), side: size)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(src.name), \(fileSizeLabel(src.size))")
+                Text("\(src.name) · \(fileSizeLabel(src.size))")
+                    .font(.caption)
+                    .foregroundStyle(foreground)
+                    .opacity(0.75)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(width: size, alignment: .leading)
+                    .accessibilityHidden(true)
             } else {
                 FileRow(symbol: symbolFor(src.mimeType), name: src.name, detail: fileSizeLabel(src.size), foreground: foreground, label: src.name, onTap: nil)
             }
@@ -121,11 +144,92 @@ struct PendingAttachmentView: View {
                 }
                 .progressViewStyle(.linear)
                 .tint(foreground)
-                .frame(width: src.isImage ? size : 180)
+                .frame(width: src.isImage || src.isVideo ? size : 180)
                 .accessibilityLabel(chat.strings.uploading)
                 .accessibilityValue("\(Int(upload.progress * 100))%")
             }
         }
+    }
+}
+
+/// A video's poster: a frame from the clip (when AVFoundation can read one) under a play glyph.
+struct VideoTile: View {
+    enum Source: Hashable {
+        case remote(URL)
+        case local(Data, name: String)
+    }
+
+    let source: Source
+    let side: CGFloat
+    @State private var poster: UIImage?
+
+    var body: some View {
+        ZStack {
+            Color.black
+            if let poster {
+                Image(uiImage: poster).resizable().scaledToFill()
+            }
+            Image(systemName: "play.fill")
+                .font(.title2)
+                .foregroundStyle(.white)
+                .frame(width: 52, height: 52)
+                .background(.black.opacity(0.45), in: Circle())
+        }
+        .frame(width: side, height: (side * 0.75).rounded())
+        .clipShape(RoundedRectangle(cornerRadius: Radius.sm, style: .continuous))
+        .task(id: source) {
+            let image: CGImage?
+            switch source {
+            case .remote(let url): image = await VideoExport.thumbnail(url, maxPixel: 600)
+            case .local(let data, let name): image = await VideoExport.thumbnail(data, name: name, maxPixel: 600)
+            }
+            poster = image.map { UIImage(cgImage: $0) }
+        }
+    }
+}
+
+/// Full-screen video player (AVKit), starts playing at once; close to leave.
+struct VideoViewer: View {
+    let attachment: Attachment
+    let onDismiss: () -> Void
+    @Environment(\.chat) private var chat
+    @State private var player: AVPlayer?
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            Color.black.ignoresSafeArea()
+            if let player {
+                VideoPlayer(player: player)
+                    .ignoresSafeArea(edges: .bottom)
+                    .accessibilityLabel(attachment.name)
+            } else {
+                ProgressView().tint(.white).frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            HStack {
+                Text(attachment.name)
+                    .font(.subheadline)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                Spacer()
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(width: minTouch, height: minTouch)
+                }
+                .accessibilityLabel(chat.strings.close)
+            }
+            .padding(.leading, Spacing.lg)
+            .background(.black.opacity(0.5))
+        }
+        .environment(\.colorScheme, .dark)
+        .onAppear {
+            guard player == nil, let url = URL(string: attachment.url ?? "") else { return }
+            let p = AVPlayer(url: url)
+            player = p
+            p.play()
+        }
+        .onDisappear { player?.pause() }
     }
 }
 

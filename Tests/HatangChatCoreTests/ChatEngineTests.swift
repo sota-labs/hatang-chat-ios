@@ -815,6 +815,20 @@ final class ChatEngineTests: XCTestCase {
         XCTAssertTrue(h.state.pending.isEmpty)
     }
 
+    func testVideosMayBe25MBButNotMore() async {
+        let h = EngineHarness()
+        await h.startReady()
+        await h.engine.attach(UploadSource(data: Data(count: Limits.videoBytes + 1), name: "VID_1.mp4", mimeType: "video/mp4"))
+        XCTAssertEqual(h.state.transientError?.code, "video_too_large")
+        XCTAssertTrue(h.state.pending.isEmpty)
+        await h.engine.clearTransientError()
+        // Over the 10 MB file limit but within the 25 MB video limit: uploaded.
+        await h.go { await $0.attach(UploadSource(data: Data(count: Limits.attachmentBytes + 1), name: "VID_2.mp4", mimeType: "video/mp4")) }
+        await eventually("uploaded") { h.api.uploads.count == 1 }
+        XCTAssertNil(h.state.transientError)
+        XCTAssertEqual(h.api.uploads.first?.contentType, "video/mp4")
+    }
+
     func testAFailedUploadFailsTheBubbleRetryUploadsAgainThenSends() async throws {
         let h = EngineHarness()
         await h.startReady()

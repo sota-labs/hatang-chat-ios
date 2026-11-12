@@ -15,6 +15,8 @@ public enum Limits {
     public static let attachmentsPerMessage = 5
     /// Largest attachment in bytes.
     public static let attachmentBytes = 10 * 1024 * 1024
+    /// Largest video (mp4, iPhone .mov) in bytes: a short phone clip after on-device compression.
+    public static let videoBytes = 25 * 1024 * 1024
     /// Largest custom data payload in bytes.
     public static let customDataBytes = 8 * 1024
 }

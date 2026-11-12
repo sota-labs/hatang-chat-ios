@@ -92,6 +92,31 @@ final class TimelineTests: XCTestCase {
         XCTAssertTrue(UploadSource(data: Data([1]), name: "a.png", mimeType: "image/png").isImage)
     }
 
+    func testVideoMimeDetectionAndSizeRule() {
+        XCTAssertEqual(mimeTypeForName("clip.MP4"), "video/mp4")
+        XCTAssertEqual(mimeTypeForName("IMG_0042.MOV"), "video/quicktime")
+        XCTAssertTrue(uploadMimeTypes.contains("video/mp4"))
+        XCTAssertTrue(uploadMimeTypes.contains("video/quicktime"))
+        // A video is a video/ type or an .mp4/.mov name (the gateway's test).
+        XCTAssertTrue(isVideoUpload(mimeType: "video/mp4"))
+        XCTAssertTrue(isVideoUpload(mimeType: "Video/QuickTime"))
+        XCTAssertTrue(isVideoUpload(mimeType: "application/octet-stream", name: "a.mov"))
+        XCTAssertFalse(isVideoUpload(mimeType: "audio/mp4", name: "voice.m4a"))
+        XCTAssertFalse(isVideoUpload(mimeType: "image/jpeg", name: "a.jpg"))
+        XCTAssertEqual(Limits.videoBytes, 25 * 1024 * 1024)
+        XCTAssertEqual(attachmentLimit(mimeType: "video/mp4"), Limits.videoBytes)
+        XCTAssertEqual(attachmentLimit(mimeType: "application/pdf", name: "a.pdf"), Limits.attachmentBytes)
+        XCTAssertEqual(attachmentTooLargeError(mimeType: "video/quicktime").code, "video_too_large")
+        XCTAssertEqual(attachmentTooLargeError(mimeType: "image/png").code, "file_too_large")
+        let video = UploadSource(data: Data([1]), name: "VID_1.mp4", mimeType: "video/mp4")
+        XCTAssertTrue(video.isVideo)
+        XCTAssertFalse(video.isImage)
+        XCTAssertEqual(video.maxBytes, Limits.videoBytes)
+        XCTAssertEqual(UploadSource(data: Data([1]), name: "a.pdf", mimeType: "application/pdf").maxBytes, Limits.attachmentBytes)
+        XCTAssertTrue(Attachment(name: "clip.mov", type: "video/quicktime").isVideo)
+        XCTAssertFalse(Attachment(name: "a.png", type: "image/png").isVideo)
+    }
+
     func testStoredSessionRoundTripsThroughTheStores() async {
         let secure = InMemoryKeyValueStore()
         let prefs = InMemoryKeyValueStore()

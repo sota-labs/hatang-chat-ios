@@ -37,6 +37,8 @@ public struct HatangChatStrings: Sendable, Hashable {
     public var attach: String
     /// File too large.
     public var tooLarge: String
+    /// Video too large (over 25 MB).
+    public var videoTooLarge: String
     /// Attachment menu: camera.
     public var takePhoto: String
     /// Attachment menu: gallery.
@@ -242,7 +244,8 @@ public struct HatangChatStrings: Sendable, Hashable {
         errorGeneric: String,
         dismiss: String,
         call: String,
-        emailUs: String
+        emailUs: String,
+        videoTooLarge: String = "Video is too large (max 25 MB). Record a shorter clip or lower the quality."
     ) {
         self.open = open
         self.close = close
@@ -259,6 +262,7 @@ public struct HatangChatStrings: Sendable, Hashable {
         self.leaveEmail = leaveEmail
         self.attach = attach
         self.tooLarge = tooLarge
+        self.videoTooLarge = videoTooLarge
         self.takePhoto = takePhoto
         self.photoLibrary = photoLibrary
         self.chooseFile = chooseFile
@@ -341,6 +345,7 @@ public struct HatangChatStrings: Sendable, Hashable {
         "leaveEmail",
         "attach",
         "tooLarge",
+        "videoTooLarge",
         "takePhoto",
         "photoLibrary",
         "chooseFile",
@@ -424,6 +429,7 @@ public struct HatangChatStrings: Sendable, Hashable {
             "leaveEmail": leaveEmail,
             "attach": attach,
             "tooLarge": tooLarge,
+            "videoTooLarge": videoTooLarge,
             "takePhoto": takePhoto,
             "photoLibrary": photoLibrary,
             "chooseFile": chooseFile,
@@ -585,7 +591,8 @@ public struct HatangChatStrings: Sendable, Hashable {
         errorGeneric: "Có lỗi xảy ra. Vui lòng thử lại.",
         dismiss: "Bỏ qua",
         call: "Gọi điện",
-        emailUs: "Email"
+        emailUs: "Email",
+        videoTooLarge: "Video quá lớn (tối đa 25 MB). Hãy quay ngắn hơn hoặc giảm chất lượng."
     )
 
     /// English.
@@ -667,7 +674,8 @@ public struct HatangChatStrings: Sendable, Hashable {
         errorGeneric: "Something went wrong. Please try again.",
         dismiss: "Dismiss",
         call: "Call us",
-        emailUs: "Email"
+        emailUs: "Email",
+        videoTooLarge: "Video is too large (max 25 MB). Record a shorter clip or lower the quality."
     )
 
 }

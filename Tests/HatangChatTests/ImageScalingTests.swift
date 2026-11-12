@@ -40,6 +40,9 @@ final class ImageScalingTests: XCTestCase {
         XCTAssertEqual(AttachmentPreparer.mimeType(name: "a.HEIC", type: .heic), "image/heic")
         XCTAssertEqual(AttachmentPreparer.mimeType(name: "report.xlsx", type: nil), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         XCTAssertEqual(AttachmentPreparer.mimeType(name: "blob", type: nil), "application/octet-stream")
+        XCTAssertEqual(AttachmentPreparer.mimeType(name: "IMG_1.MOV", type: .quickTimeMovie), "video/quicktime")
+        XCTAssertEqual(AttachmentPreparer.mimeType(name: "clip.mp4", type: .mpeg4Movie), "video/mp4")
+        XCTAssertEqual(AttachmentPreparer.mimeType(name: "clip.mov", type: nil), "video/quicktime")
     }
 
     private func encode(_ type: UTType, width: Int, height: Int) throws -> Data {
@@ -83,6 +86,13 @@ final class ImageScalingTests: XCTestCase {
         let big = Data(count: 10 * 1024 * 1024 + 1)
         XCTAssertThrowsError(try AttachmentPreparer.prepare(big, name: "a.pdf", mimeType: "application/pdf")) {
             XCTAssertEqual(($0 as? HatangError)?.code, "file_too_large")
+        }
+        // Videos get 25 MB, with their own message.
+        let clip = Data(count: 20 * 1024 * 1024)
+        XCTAssertEqual(try AttachmentPreparer.prepare(clip, name: "VID_1.mp4", mimeType: "video/mp4").size, clip.count)
+        XCTAssertEqual(try AttachmentPreparer.prepare(clip, name: "IMG_1.MOV", mimeType: "video/quicktime").mimeType, "video/quicktime")
+        XCTAssertThrowsError(try AttachmentPreparer.prepare(Data(count: 25 * 1024 * 1024 + 1), name: "VID_1.mp4", mimeType: "video/mp4")) {
+            XCTAssertEqual(($0 as? HatangError)?.code, "video_too_large")
         }
         XCTAssertThrowsError(try AttachmentPreparer.prepare(Data([1, 2]), name: "a.exe", mimeType: "application/x-msdownload")) {
             XCTAssertEqual(($0 as? HatangError)?.code, "unsupported_file_type")

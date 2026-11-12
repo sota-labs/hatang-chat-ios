@@ -95,7 +95,7 @@ struct ConversationBody: View {
             model.fire { await $0.setVisible(false) }
             model.engine?.emit(.closed)
         }
-        .photosPicker(isPresented: $pickingPhoto, selection: $photo, matching: .images)
+        .photosPicker(isPresented: $pickingPhoto, selection: $photo, matching: AttachmentReader.pickerFilter)
         .onChange(of: photo) { _, item in
             guard let item else { return }
             photo = nil
@@ -105,8 +105,14 @@ struct ConversationBody: View {
             if case .success(let url) = result { attach { try await AttachmentReader.read(url) } }
         }
         .fullScreenCover(item: $viewing) { v in
-            ImageViewer(attachment: v.attachment) { viewing = nil }
-                .environment(\.chat, chat)
+            Group {
+                if v.attachment.isVideo {
+                    VideoViewer(attachment: v.attachment) { viewing = nil }
+                } else {
+                    ImageViewer(attachment: v.attachment) { viewing = nil }
+                }
+            }
+            .environment(\.chat, chat)
         }
     }
 
@@ -145,7 +151,7 @@ struct ConversationBody: View {
     }
 }
 
-/// The picture on screen in the viewer.
+/// The picture or video on screen in the viewer.
 private struct Viewed: Identifiable {
     let attachment: Attachment
     var id: String { attachment.id }

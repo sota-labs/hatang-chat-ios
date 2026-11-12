@@ -735,11 +735,12 @@ public actor ChatEngine {
 
     /// Sends a file, optionally with a `caption`. It shows at once as a pending bubble with upload
     /// progress; when the bytes are on the server the message goes out like text (same retry by client id).
-    /// Files over 10 MB or of a type the gateway refuses fail immediately with a transient error.
+    /// Files over 10 MB (videos over 25 MB) or of a type the gateway refuses fail immediately with a
+    /// transient error (`file_too_large`, `video_too_large`, `unsupported_file_type`).
     public func attach(_ source: UploadSource, caption: String = "") async {
         if disposed { return }
-        if source.size > Limits.attachmentBytes {
-            update { $0.transientError = HatangError(code: "file_too_large", message: "Files must be 10 MB or smaller") }
+        if source.size > source.maxBytes {
+            update { $0.transientError = attachmentTooLargeError(mimeType: source.mimeType, name: source.name) }
             return
         }
         if !uploadMimeTypes.contains(source.mimeType) {

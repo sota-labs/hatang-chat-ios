@@ -22,6 +22,12 @@ public struct UploadSource: Sendable, Hashable, CustomStringConvertible {
     /// A picture (shown as a thumbnail).
     public var isImage: Bool { mimeType.hasPrefix("image/") }
 
+    /// A video (mp4 or .mov), allowed up to `Limits.videoBytes`.
+    public var isVideo: Bool { isVideoUpload(mimeType: mimeType, name: name) }
+
+    /// The largest this file may be: `Limits.videoBytes` for videos, `Limits.attachmentBytes` otherwise.
+    public var maxBytes: Int { attachmentLimit(mimeType: mimeType, name: name) }
+
     public var description: String { "UploadSource(\(name), \(mimeType), \(size) bytes)" }
 }
 
@@ -31,7 +37,7 @@ public let uploadMimeTypes: Set<String> = [
     "application/pdf", "text/plain", "text/csv", "application/zip",
     "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "video/mp4", "audio/mp4", "audio/mpeg",
+    "video/mp4", "video/quicktime", "audio/mp4", "audio/mpeg",
 ]
 
 private let mimeByExtension: [String: String] = [
@@ -40,13 +46,32 @@ private let mimeByExtension: [String: String] = [
     "zip": "application/zip", "doc": "application/msword",
     "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "xls": "application/vnd.ms-excel", "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "mp4": "video/mp4", "m4a": "audio/mp4", "mp3": "audio/mpeg",
+    "mp4": "video/mp4", "mov": "video/quicktime", "m4a": "audio/mp4", "mp3": "audio/mpeg",
 ]
 
 /// MIME type for a file name, from its extension; nil when the gateway would refuse it.
 public func mimeTypeForName(_ name: String) -> String? {
     guard let dot = name.lastIndex(of: ".") else { return nil }
     return mimeByExtension[name[name.index(after: dot)...].lowercased()]
+}
+
+/// Whether a file is a video for the size rule: a `video/` MIME type or an `.mp4` / `.mov` name (the gateway's test).
+public func isVideoUpload(mimeType: String, name: String = "") -> Bool {
+    if mimeType.lowercased().hasPrefix("video/") { return true }
+    let lower = name.lowercased()
+    return lower.hasSuffix(".mp4") || lower.hasSuffix(".mov")
+}
+
+/// The largest upload the gateway takes for this file: 25 MB for videos, 10 MB for everything else.
+public func attachmentLimit(mimeType: String, name: String = "") -> Int {
+    isVideoUpload(mimeType: mimeType, name: name) ? Limits.videoBytes : Limits.attachmentBytes
+}
+
+/// The error for a file over its limit: `video_too_large` for videos, `file_too_large` otherwise.
+public func attachmentTooLargeError(mimeType: String, name: String = "") -> HatangError {
+    isVideoUpload(mimeType: mimeType, name: name)
+        ? HatangError(code: "video_too_large", message: "Videos must be 25 MB or smaller")
+        : HatangError(code: "file_too_large", message: "Files must be 10 MB or smaller")
 }
 
 /// The upload behind a pending attachment message.

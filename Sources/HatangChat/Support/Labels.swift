@@ -14,6 +14,7 @@ func errorText(_ e: HatangError?, strings: HatangChatStrings) -> String {
     if e.isRateLimit { return strings.rateLimited }
     switch e.code {
     case "file_too_large": return strings.tooLarge
+    case "video_too_large": return strings.videoTooLarge
     case "unsupported_file_type": return strings.unsupportedFile
     case "timeout", "closed": return strings.sendFailed
     case "network_error", "read_failed": return strings.errorGeneric

@@ -73,7 +73,8 @@ enum ImageScaling {
 }
 
 /// Turns picked bytes into an `UploadSource` the gateway accepts: HEIC/HEIF become JPEG, big photos are
-/// scaled to 2048 px at quality 0.85, and anything still over the 10 MB limit is refused.
+/// scaled to 2048 px at quality 0.85, and anything still over its limit (25 MB for videos, 10 MB for the
+/// rest) is refused.
 enum AttachmentPreparer {
     /// MIME type for a file: from its UTType, else its extension; `application/octet-stream` when unknown.
     static func mimeType(name: String, type: UTType?) -> String {
@@ -92,12 +93,15 @@ enum AttachmentPreparer {
             return UploadSource(data: jpeg, name: ImageScaling.withExtension(name, "jpg"), mimeType: "image/jpeg")
         }
         // No decoder for it (or no need): send the original (the gateway accepts HEIC) if it fits.
-        guard data.count <= Limits.attachmentBytes else { throw tooLarge }
+        guard data.count <= attachmentLimit(mimeType: mimeType, name: name) else {
+            throw attachmentTooLargeError(mimeType: mimeType, name: name)
+        }
         guard uploadMimeTypes.contains(mimeType) else {
             throw HatangError(code: "unsupported_file_type", message: "File type \(mimeType) is not allowed")
         }
         return UploadSource(data: data, name: name, mimeType: mimeType)
     }
 
-    static var tooLarge: HatangError { HatangError(code: "file_too_large", message: "Files must be 10 MB or smaller") }
+    static var tooLarge: HatangError { attachmentTooLargeError(mimeType: "application/octet-stream") }
+    static var videoTooLarge: HatangError { attachmentTooLargeError(mimeType: "video/mp4") }
 }
