@@ -4,6 +4,8 @@ All notable changes to the `HatangChat` Swift package are documented here. The f
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-12
+
 ### Changed
 
 - The voice-message mic only shows when the app declares `NSMicrophoneUsageDescription` in its Info.plist. Without the key, iOS would kill the app when recording starts; now the mic is simply hidden and voice notes still play. `VoiceNote.appDeclaresMicrophone()` tells you which case you are in.
