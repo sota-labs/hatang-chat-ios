@@ -1,3 +1,3 @@
 // `just release ios <version>` rewrites this line.
 /// SDK version reported to the gateway.
-public let sdkVersion = "0.4.1"
+public let sdkVersion = "0.5.0"

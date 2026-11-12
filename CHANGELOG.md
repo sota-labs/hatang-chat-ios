@@ -4,6 +4,8 @@ All notable changes to the `HatangChat` Swift package are documented here. The f
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-12
+
 ### Added
 
 - Customers can send videos: the photo library picker offers videos next to photos; a picked clip is loaded as a file and compressed on the device to an H.264 mp4 (720p, then medium quality if still too big) so a typical phone clip fits the new 25 MB video limit. `.mov` files from the file picker are converted the same way. Other files stay at 10 MB.
