@@ -15,6 +15,7 @@ struct ConversationBody: View {
     @State private var pickingFile = false
     @State private var photo: PhotosPickerItem?
     @State private var viewing: Viewed?
+    @State private var recorder = VoiceRecorder()
     @FocusState private var composerFocused: Bool
 
     var body: some View {
@@ -74,7 +75,11 @@ struct ConversationBody: View {
                             focused: $composerFocused,
                             onSend: { v in model.run { await $0.send(v) } },
                             onPickPhoto: { pickingPhoto = true },
-                            onPickFile: { pickingFile = true }
+                            onPickFile: { pickingFile = true },
+                            voiceMessages: state.config?.voiceMessages == true,
+                            recordingSince: recorder.startedAt,
+                            onRecord: startRecording,
+                            onStopRecording: finishRecording
                         )
                     }
                     BrandingLine()
@@ -90,10 +95,18 @@ struct ConversationBody: View {
             model.engine?.emit(.opened)
         }
         .onDisappear {
+            if recorder.isRecording { recorder.stop(keep: false) }
+            if viewing == nil { AudioPlayback.shared.stop() }
             // The picture viewer covers the conversation without leaving it.
             guard viewing == nil, !pickingPhoto, !pickingFile else { return }
             model.fire { await $0.setVisible(false) }
             model.engine?.emit(.closed)
+        }
+        // The 2-minute cap: the note is sent as is (like the widget).
+        .task(id: recorder.startedAt) {
+            guard let started = recorder.startedAt else { return }
+            try? await Task.sleep(for: .seconds(max(0, VoiceNote.maxDuration - Date().timeIntervalSince(started))))
+            if recorder.startedAt == started { finishRecording(true) }
         }
         .photosPicker(isPresented: $pickingPhoto, selection: $photo, matching: AttachmentReader.pickerFilter)
         .onChange(of: photo) { _, item in
@@ -114,6 +127,26 @@ struct ConversationBody: View {
             }
             .environment(\.chat, chat)
         }
+    }
+
+    private func startRecording() {
+        let strings = chat.strings
+        AudioPlayback.shared.stop()
+        composerFocused = false
+        Task {
+            switch await recorder.start() {
+            case .started: localError = nil
+            case .denied: localError = strings.micDenied
+            case .failed: localError = strings.errorGeneric
+            }
+        }
+    }
+
+    /// Stops the voice note; when `send`, uploads it like any file and sends it with no text.
+    private func finishRecording(_ send: Bool) {
+        guard let data = recorder.stop(keep: send) else { return }
+        let source = UploadSource.voiceNote(data)
+        model.run { await $0.attach(source) }
     }
 
     private func attach(_ read: @escaping @Sendable () async throws -> UploadSource) {

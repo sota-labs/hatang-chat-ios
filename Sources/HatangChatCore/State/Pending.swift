@@ -37,7 +37,7 @@ public let uploadMimeTypes: Set<String> = [
     "application/pdf", "text/plain", "text/csv", "application/zip",
     "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "video/mp4", "video/quicktime", "audio/mp4", "audio/mpeg",
+    "video/mp4", "video/quicktime", "audio/mp4", "audio/mpeg", "audio/webm", "audio/ogg",
 ]
 
 private let mimeByExtension: [String: String] = [
@@ -47,6 +47,7 @@ private let mimeByExtension: [String: String] = [
     "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "xls": "application/vnd.ms-excel", "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "mp4": "video/mp4", "mov": "video/quicktime", "m4a": "audio/mp4", "mp3": "audio/mpeg",
+    "weba": "audio/webm", "ogg": "audio/ogg", "oga": "audio/ogg", "opus": "audio/ogg",
 ]
 
 /// MIME type for a file name, from its extension; nil when the gateway would refuse it.

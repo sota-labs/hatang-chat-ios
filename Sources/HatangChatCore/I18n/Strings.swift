@@ -39,6 +39,14 @@ public struct HatangChatStrings: Sendable, Hashable {
     public var tooLarge: String
     /// Video too large (over 25 MB).
     public var videoTooLarge: String
+    /// Mic button label: start a voice note.
+    public var recordVoice: String
+    /// Shown while a voice note is being recorded.
+    public var recording: String
+    /// Label of a voice note (bubble player, accessibility).
+    public var voiceNote: String
+    /// The microphone is not allowed or not available.
+    public var micDenied: String
     /// Attachment menu: camera.
     public var takePhoto: String
     /// Attachment menu: gallery.
@@ -245,7 +253,11 @@ public struct HatangChatStrings: Sendable, Hashable {
         dismiss: String,
         call: String,
         emailUs: String,
-        videoTooLarge: String = "Video is too large (max 25 MB). Record a shorter clip or lower the quality."
+        videoTooLarge: String = "Video is too large (max 25 MB). Record a shorter clip or lower the quality.",
+        recordVoice: String = "Record a voice message",
+        recording: String = "Recording…",
+        voiceNote: String = "Voice message",
+        micDenied: String = "The microphone is not available. Allow the app to use it in Settings."
     ) {
         self.open = open
         self.close = close
@@ -263,6 +275,10 @@ public struct HatangChatStrings: Sendable, Hashable {
         self.attach = attach
         self.tooLarge = tooLarge
         self.videoTooLarge = videoTooLarge
+        self.recordVoice = recordVoice
+        self.recording = recording
+        self.voiceNote = voiceNote
+        self.micDenied = micDenied
         self.takePhoto = takePhoto
         self.photoLibrary = photoLibrary
         self.chooseFile = chooseFile
@@ -346,6 +362,10 @@ public struct HatangChatStrings: Sendable, Hashable {
         "attach",
         "tooLarge",
         "videoTooLarge",
+        "recordVoice",
+        "recording",
+        "voiceNote",
+        "micDenied",
         "takePhoto",
         "photoLibrary",
         "chooseFile",
@@ -430,6 +450,10 @@ public struct HatangChatStrings: Sendable, Hashable {
             "attach": attach,
             "tooLarge": tooLarge,
             "videoTooLarge": videoTooLarge,
+            "recordVoice": recordVoice,
+            "recording": recording,
+            "voiceNote": voiceNote,
+            "micDenied": micDenied,
             "takePhoto": takePhoto,
             "photoLibrary": photoLibrary,
             "chooseFile": chooseFile,
@@ -592,7 +616,11 @@ public struct HatangChatStrings: Sendable, Hashable {
         dismiss: "Bỏ qua",
         call: "Gọi điện",
         emailUs: "Email",
-        videoTooLarge: "Video quá lớn (tối đa 25 MB). Hãy quay ngắn hơn hoặc giảm chất lượng."
+        videoTooLarge: "Video quá lớn (tối đa 25 MB). Hãy quay ngắn hơn hoặc giảm chất lượng.",
+        recordVoice: "Ghi âm tin nhắn thoại",
+        recording: "Đang ghi âm…",
+        voiceNote: "Tin nhắn thoại",
+        micDenied: "Không dùng được micro. Hãy cho phép ứng dụng dùng micro trong Cài đặt."
     )
 
     /// English.
@@ -675,7 +703,11 @@ public struct HatangChatStrings: Sendable, Hashable {
         dismiss: "Dismiss",
         call: "Call us",
         emailUs: "Email",
-        videoTooLarge: "Video is too large (max 25 MB). Record a shorter clip or lower the quality."
+        videoTooLarge: "Video is too large (max 25 MB). Record a shorter clip or lower the quality.",
+        recordVoice: "Record a voice message",
+        recording: "Recording…",
+        voiceNote: "Voice message",
+        micDenied: "The microphone is not available. Allow the app to use it in Settings."
     )
 
 }

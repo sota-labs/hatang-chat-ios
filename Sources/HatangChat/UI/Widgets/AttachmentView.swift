@@ -28,7 +28,8 @@ extension Attachment {
 }
 
 /// One attachment of a sent or received message: a tappable thumbnail for pictures (opens the viewer), a
-/// tile with a play glyph for videos (plays full screen), a file row for everything else (opens it in the browser or Quick Look via the signed link).
+/// tile with a play glyph for videos (plays full screen), a compact player for voice notes and other audio,
+/// a file row for everything else (opens it in the browser or Quick Look via the signed link).
 struct AttachmentView: View {
     let attachment: Attachment
     let foreground: Color
@@ -80,6 +81,8 @@ struct AttachmentView: View {
             .accessibilityLabel("\(a.name), \(fileSizeLabel(a.size))")
             .accessibilityHint(chat.strings.openFile)
             .accessibilityAddTraits(.startsMediaSession)
+        } else if a.isAudio, !(a.url ?? "").isEmpty {
+            VoiceNoteView(attachment: a, foreground: foreground, onExpired: onExpired)
         } else {
             FileRow(
                 symbol: symbolFor(a.type),
@@ -131,6 +134,8 @@ struct PendingAttachmentView: View {
                     .truncationMode(.middle)
                     .frame(width: size, alignment: .leading)
                     .accessibilityHidden(true)
+            } else if src.isVoiceNote {
+                FileRow(symbol: "waveform", name: chat.strings.voiceNote, detail: fileSizeLabel(src.size), foreground: foreground, label: chat.strings.voiceNote, onTap: nil)
             } else {
                 FileRow(symbol: symbolFor(src.mimeType), name: src.name, detail: fileSizeLabel(src.size), foreground: foreground, label: src.name, onTap: nil)
             }

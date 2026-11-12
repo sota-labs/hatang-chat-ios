@@ -1153,6 +1153,9 @@ public struct SiteConfig: Codable, Sendable, Hashable {
     public var greetingOptions: GreetingOptions?
     /// Other ways to reach the business, in display order.
     public var contactButtons: [ContactButton]
+    /// Customers may record voice notes (the mic replaces Send while the field is empty); false when the
+    /// gateway does not send `voice_messages` (older gateways).
+    public var voiceMessages: Bool
     /// The full wire payload (campaigns, social proof, ...).
     public var raw: JSONObject
 
@@ -1167,6 +1170,7 @@ public struct SiteConfig: Codable, Sendable, Hashable {
         case agentAvatars = "agent_avatars"
         case greetingOptions = "greeting_options"
         case contactButtons = "contact_buttons"
+        case voiceMessages = "voice_messages"
     }
 
     public init(
@@ -1186,6 +1190,7 @@ public struct SiteConfig: Codable, Sendable, Hashable {
         header: HeaderConfig? = nil,
         greetingOptions: GreetingOptions? = nil,
         contactButtons: [ContactButton] = [],
+        voiceMessages: Bool = false,
         raw: JSONObject = [:]
     ) {
         self.siteId = siteId
@@ -1204,6 +1209,7 @@ public struct SiteConfig: Codable, Sendable, Hashable {
         self.header = header
         self.greetingOptions = greetingOptions
         self.contactButtons = contactButtons
+        self.voiceMessages = voiceMessages
         self.raw = raw
     }
 
@@ -1255,6 +1261,7 @@ public struct SiteConfig: Codable, Sendable, Hashable {
             header: j.obj(K.header.rawValue).map(HeaderConfig.init(json:)),
             greetingOptions: j.obj(K.greetingOptions.rawValue).map(GreetingOptions.init(json:)),
             contactButtons: j.objList(K.contactButtons.rawValue).map(ContactButton.init(json:)),
+            voiceMessages: j.boolOr(K.voiceMessages.rawValue),
             raw: j
         )
     }
@@ -1278,7 +1285,8 @@ public struct SiteConfig: Codable, Sendable, Hashable {
             (K.launcher.rawValue, .object(launcher.toJSON())),
             (K.header.rawValue, header.map { .object($0.toJSON()) }),
             (K.greetingOptions.rawValue, greetingOptions.map { .object($0.toJSON()) }),
-            (K.contactButtons.rawValue, contactButtons.isEmpty ? nil : .array(contactButtons.map { .object($0.toJSON()) }))
+            (K.contactButtons.rawValue, contactButtons.isEmpty ? nil : .array(contactButtons.map { .object($0.toJSON()) })),
+            (K.voiceMessages.rawValue, voiceMessages || raw[K.voiceMessages.rawValue] != nil ? voiceMessages.json : nil)
         )
         return raw.merging(fields) { _, new in new }
     }
