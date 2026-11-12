@@ -33,6 +33,13 @@ final class VoiceNoteTests: XCTestCase {
         XCTAssertFalse(VoiceNote.showsMic(voiceMessages: true, text: "", enabled: false))
     }
 
+    func testMicNeedsTheAppsMicrophoneUsageDescription() {
+        XCTAssertTrue(VoiceNote.appDeclaresMicrophone(["NSMicrophoneUsageDescription": "Gửi tin nhắn thoại cho shop"]))
+        XCTAssertFalse(VoiceNote.appDeclaresMicrophone([:]))
+        XCTAssertFalse(VoiceNote.appDeclaresMicrophone(["NSMicrophoneUsageDescription": "  "]))
+        XCTAssertFalse(VoiceNote.appDeclaresMicrophone(nil))
+    }
+
     func testDurationRulesAndClock() {
         XCTAssertEqual(VoiceNote.maxDuration, 120)
         XCTAssertFalse(VoiceNote.keeps(duration: 0.79))

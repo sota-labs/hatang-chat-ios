@@ -24,6 +24,13 @@ public enum VoiceNote {
         voiceMessages && enabled && !hasStaged && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    /// Whether the host app may record: iOS kills an app that uses the microphone without
+    /// `NSMicrophoneUsageDescription` in its Info.plist, so without the key the mic is hidden (voice notes still play).
+    public static func appDeclaresMicrophone(_ info: [String: Any]? = Bundle.main.infoDictionary) -> Bool {
+        guard let text = info?["NSMicrophoneUsageDescription"] as? String else { return false }
+        return !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     /// Whether a finished recording of `duration` seconds is long enough to send.
     public static func keeps(duration: TimeInterval) -> Bool { duration >= minDuration }
 

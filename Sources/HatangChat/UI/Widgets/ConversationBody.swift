@@ -76,7 +76,7 @@ struct ConversationBody: View {
                             onSend: { v in model.run { await $0.send(v) } },
                             onPickPhoto: { pickingPhoto = true },
                             onPickFile: { pickingFile = true },
-                            voiceMessages: state.config?.voiceMessages == true,
+                            voiceMessages: state.config?.voiceMessages == true && VoiceNote.appDeclaresMicrophone(),
                             recordingSince: recorder.startedAt,
                             onRecord: startRecording,
                             onStopRecording: finishRecording
