@@ -46,9 +46,16 @@ final class ChatSocket: @unchecked Sendable {
         var seq = 0
         var ping: Task<Void, Never>?
         var reconnect: Task<Void, Never>?
-        var queue: [String] = []
+        /// Frames waiting for `ready`, with the request id when a caller is waiting for the reply.
+        var queue: [(id: String?, raw: String)] = []
         var pending: [String: Pending] = [:]
         var ready = false
+
+        /// Removes the queued frames of requests that failed (timed out or closed), so they never go out.
+        mutating func dropQueued(_ ids: Set<String>) {
+            if ids.isEmpty { return }
+            queue.removeAll { $0.id.map(ids.contains) ?? false }
+        }
     }
 
     /// Socket URL (already carrying `site`, `app` and `install`).
@@ -136,6 +143,7 @@ final class ChatSocket: @unchecked Sendable {
             s.reader?.cancel()
             s.reader = nil
             let p = Array(s.pending.values)
+            s.dropQueued(Set(s.pending.keys))
             s.pending = [:]
             if c != nil { events.yield(.status(.closed)) }
             return (c, p)
@@ -157,7 +165,7 @@ final class ChatSocket: @unchecked Sendable {
             if s.ready, let c = s.conn {
                 c.send(raw)
             } else {
-                s.queue.append(raw)
+                s.queue.append((id, raw))
             }
         }
     }
@@ -184,8 +192,13 @@ final class ChatSocket: @unchecked Sendable {
 
     // MARK: - Internals
 
+    /// The request timed out. A frame still queued (socket not ready) is dropped too: the caller has
+    /// reported the failure, so it must not go out on the next connection (a retry would then land twice).
     private func expire(_ id: String) {
-        let p = state.withLock { $0.pending.removeValue(forKey: id) }
+        let p = state.withLock { s -> Pending? in
+            s.dropQueued([id])
+            return s.pending.removeValue(forKey: id)
+        }
         p?.continuation.resume(throwing: HatangError.timeout)
     }
 
@@ -247,7 +260,7 @@ final class ChatSocket: @unchecked Sendable {
                 startPing(&s)
                 let q = s.queue
                 s.queue = []
-                if let c = s.conn { q.forEach(c.send) }
+                if let c = s.conn { q.forEach { c.send($0.raw) } }
             }
             var reply: (Pending, ServerFrame)?
             if let id = f.id, let p = s.pending.removeValue(forKey: id) {
@@ -274,6 +287,7 @@ final class ChatSocket: @unchecked Sendable {
             s.conn = nil
             s.reader = nil
             let p = Array(s.pending.values)
+            s.dropQueued(Set(s.pending.keys))
             s.pending = [:]
             events.yield(.close(code, reason))
             events.yield(.status(.closed))

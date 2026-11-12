@@ -118,7 +118,9 @@ struct MessageList: View {
                 showSeen: r.showSeen,
                 onAttachmentExpired: { onAttachmentExpired(r.message) },
                 hideEmptyBubble: r.card != nil,
-                footerFullWidth: r.card != nil
+                footerFullWidth: r.card != nil,
+                recalled: r.recalled,
+                edited: r.edited
             ) {
                 if r.askEmail {
                     EmailRequestForm(onSubmit: onSubmitEmail)

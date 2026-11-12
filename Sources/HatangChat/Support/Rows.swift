@@ -13,6 +13,10 @@ struct MessageRow: Hashable, Sendable {
     var askEmail: Bool = false
     /// The card under the message.
     var card: MessageCard?
+    /// The team recalled it: drawn as a muted placeholder, without text, files or card.
+    var recalled: Bool = false
+    /// The team edited it: a small "edited" label under it.
+    var edited: Bool = false
 }
 
 /// One row of the message list, in display order (oldest first).
@@ -80,6 +84,11 @@ func buildRows(_ state: ChatState, strings: HatangChatStrings, now: Date = Date(
             case "rated": rows.append(.system(id: e.id, text: strings.rateThanks))
             default: break
             }
+        case .message(let m) where m.isRecalled:
+            var shown = m
+            shown.content = ""
+            shown.attachments = []
+            rows.append(.message(MessageRow(message: shown, mine: m.isMine, showSeen: m.isMine && lastVisitorRead == m.seq, recalled: true)))
         case .message(let m):
             let mine = m.isMine
             var label: String?
@@ -102,7 +111,8 @@ func buildRows(_ state: ChatState, strings: HatangChatStrings, now: Date = Date(
                 showSeen: mine && lastVisitorRead == m.seq,
                 senderLabel: label,
                 askEmail: askEmail,
-                card: card
+                card: card,
+                edited: m.isEdited
             )))
         }
     }

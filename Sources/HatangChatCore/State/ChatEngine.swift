@@ -57,6 +57,9 @@ public actor ChatEngine {
     private var socketSerial = 0
     private var cycle = 0
     private var readyEmitted = false
+    /// Ids of own messages put in the timeline from their ack whose `message` echo has not arrived yet:
+    /// that echo is the first sighting (`messageSent`), not an update.
+    private var awaitingEcho: Set<String> = []
     private var backgroundTask: Task<Void, Never>?
     private var typingTask: Task<Void, Never>?
     private var bootstrapTask: Task<Void, Never>?
@@ -631,6 +634,16 @@ public actor ChatEngine {
 
     private func onMessage(_ m: MessageDto) {
         guard let conv = st.conversation, m.conversationId == conv.id else { return }
+        let echo = awaitingEcho.remove(m.id) != nil
+        if !echo, let known = st.timeline.items.first(where: { $0.id == m.id })?.message {
+            // The same message again: the team edited, recalled or removed a file from it. Replace it in
+            // place; it is not new, so no unread, read receipt or conversion.
+            var next = m
+            if next.readAt == nil { next.readAt = known.readAt }
+            mergeItems([.message(next)])
+            event(.messageUpdated(next))
+            return
+        }
         mergeItems([.message(m)])
         update { $0.typingAgent = nil }
         if m.isMine {
@@ -896,6 +909,7 @@ public actor ChatEngine {
                 clientId: p.clientId
             )
             removePending(p.clientId)
+            if !st.timeline.items.contains(where: { $0.id == local.id }) { awaitingEcho.insert(local.id) }
             mergeItems([.message(local)])
             if adopted {
                 event(.conversion(HatangConversion(kind: .chatStarted)))

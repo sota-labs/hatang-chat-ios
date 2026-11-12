@@ -350,6 +350,89 @@ final class ChatEngineTests: XCTestCase {
         XCTAssertEqual(c.data["transaction_id"], "A1")
     }
 
+    // MARK: - Updates (edit, recall, file removed)
+
+    private func updated(_ m: JSONObject, _ fields: [String: JSONValue]) -> JSONObject {
+        m.with(["d": .object(m.d.with(fields))])
+    }
+
+    func testAnEditedMessageReplacesItInPlaceWithoutCountingAsNew() async {
+        let h = EngineHarness()
+        await h.startReady()
+        let m = agentMessage(4)
+        h.conn.push(m)
+        await eventually("received") { h.received.count == 1 }
+        let unread = h.state.unread
+        h.conn.push(updated(m, ["content": "Sửa lại", "metadata": ["edited": true, "edited_at": "2026-11-13T08:00:00.000Z"]]))
+        await eventually("updated") { h.updated.count == 1 }
+        await h.flush()
+        let shown = h.state.timeline.items.compactMap(\.message).filter { $0.id == "m_4" }
+        XCTAssertEqual(shown.count, 1)
+        XCTAssertEqual(shown.first?.content, "Sửa lại")
+        XCTAssertTrue(shown.first?.isEdited ?? false)
+        XCTAssertNotNil(shown.first?.editedAt)
+        XCTAssertEqual(h.updated.first?.content, "Sửa lại")
+        XCTAssertEqual(h.received.count, 1)
+        XCTAssertEqual(h.state.unread, unread)
+    }
+
+    func testARecallWhileHiddenIsNotUnreadAndSendsNoReceiptOrConversion() async {
+        let h = EngineHarness()
+        await h.startReady()
+        let m = agentMessage(4)
+        let paid = updated(m, ["metadata": ["kind": "order_paid", "value": 1000, "code": "A1"], "attachments": [["id": "f1", "name": "a.png", "size": 10, "type": "image/png"]]])
+        h.conn.push(paid)
+        await eventually("received") { h.received.count == 1 }
+        XCTAssertEqual(h.conversions.count, 1)
+        let unread = h.state.unread
+        h.conn.push(updated(m, ["content": "", "attachments": [], "metadata": ["kind": "order_paid", "recalled": true]]))
+        await eventually("updated") { h.updated.count == 1 }
+        await h.flush()
+        let shown = h.state.timeline.items.last?.message
+        XCTAssertEqual(shown?.id, "m_4")
+        XCTAssertTrue(shown?.isRecalled ?? false)
+        XCTAssertFalse(shown?.isEdited ?? true)
+        XCTAssertEqual(shown?.attachments, [])
+        XCTAssertEqual(h.state.unread, unread)
+        XCTAssertEqual(h.conversions.count, 1)
+        XCTAssertFalse(h.conn.sentTypes.contains("read"))
+    }
+
+    func testARemovedFileDisappearsAndAVisibleUpdateSendsNoNewReceipt() async {
+        let h = EngineHarness()
+        await h.startReady()
+        await h.engine.setVisible(true)
+        let files: JSONValue = [["id": "f1", "name": "a.pdf", "size": 10, "type": "application/pdf"], ["id": "f2", "name": "b.pdf", "size": 10, "type": "application/pdf"]]
+        let m = updated(agentMessage(4), ["attachments": files])
+        h.conn.push(m)
+        await eventually("received") { h.received.count == 1 }
+        let reads = h.conn.count("read")
+        h.conn.push(updated(m, ["attachments": [["id": "f2", "name": "b.pdf", "size": 10, "type": "application/pdf"]], "metadata": ["removed_files": ["f1"]]]))
+        await eventually("updated") { h.updated.count == 1 }
+        XCTAssertEqual(h.state.timeline.items.last?.message?.attachments.map(\.id), ["f2"])
+        XCTAssertEqual(h.conn.count("read"), reads)
+        XCTAssertEqual(h.received.count, 1)
+    }
+
+    func testAnUpdateKeepsTheReadStampAndTheAckEchoIsStillSent() async {
+        let h = EngineHarness()
+        await h.startReady()
+        await h.go { await $0.send("hi") }
+        await h.ack(id: "m_new", seq: 4)
+        await eventually("acked") { h.state.pending.isEmpty }
+        // The echo of an acked message is its first sighting, not an update.
+        h.conn.push(updated(agentMessage(4), ["id": "m_new", "sender_type": "visitor", "content": "hi"]))
+        await eventually("sent") { h.sentEvents.count == 1 }
+        XCTAssertTrue(h.updated.isEmpty)
+        h.conn.push(json(#"{"t":"read","d":{"conversation_id":"conv_1","side":"agent","up_to_seq":4}}"#))
+        await eventually("read") { h.state.timeline.items.last?.message?.readAt != nil }
+        // A later copy of the same message without read_at keeps the stamp.
+        h.conn.push(updated(agentMessage(4), ["id": "m_new", "sender_type": "visitor", "content": "hi", "read_at": .null]))
+        await eventually("updated") { h.updated.count == 1 }
+        XCTAssertNotNil(h.state.timeline.items.last?.message?.readAt)
+        XCTAssertEqual(h.sentEvents.count, 1)
+    }
+
     func testConversationStartAdoptsTheThreadReplaysItAndAsksToOpen() async {
         let h = EngineHarness()
         h.api.bootstrapEdit = noConversation

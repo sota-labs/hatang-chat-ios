@@ -113,6 +113,10 @@ final class EngineHarness: @unchecked Sendable {
         eventsOf { if case .messageReceived(let m) = $0 { return m } else { return nil } }
     }
 
+    var updated: [MessageDto] {
+        eventsOf { if case .messageUpdated(let m) = $0 { return m } else { return nil } }
+    }
+
     var sentEvents: [MessageDto] {
         eventsOf { if case .messageSent(let m) = $0 { return m } else { return nil } }
     }

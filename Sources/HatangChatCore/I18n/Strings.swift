@@ -47,6 +47,10 @@ public struct HatangChatStrings: Sendable, Hashable {
     public var voiceNote: String
     /// The microphone is not allowed or not available.
     public var micDenied: String
+    /// Placeholder for a message the team recalled.
+    public var recalled: String
+    /// Small label next to a message the team edited.
+    public var edited: String
     /// Attachment menu: camera.
     public var takePhoto: String
     /// Attachment menu: gallery.
@@ -257,7 +261,9 @@ public struct HatangChatStrings: Sendable, Hashable {
         recordVoice: String = "Record a voice message",
         recording: String = "Recording…",
         voiceNote: String = "Voice message",
-        micDenied: String = "The microphone is not available. Allow the app to use it in Settings."
+        micDenied: String = "The microphone is not available. Allow the app to use it in Settings.",
+        recalled: String = "Message recalled",
+        edited: String = "edited"
     ) {
         self.open = open
         self.close = close
@@ -279,6 +285,8 @@ public struct HatangChatStrings: Sendable, Hashable {
         self.recording = recording
         self.voiceNote = voiceNote
         self.micDenied = micDenied
+        self.recalled = recalled
+        self.edited = edited
         self.takePhoto = takePhoto
         self.photoLibrary = photoLibrary
         self.chooseFile = chooseFile
@@ -366,6 +374,8 @@ public struct HatangChatStrings: Sendable, Hashable {
         "recording",
         "voiceNote",
         "micDenied",
+        "recalled",
+        "edited",
         "takePhoto",
         "photoLibrary",
         "chooseFile",
@@ -454,6 +464,8 @@ public struct HatangChatStrings: Sendable, Hashable {
             "recording": recording,
             "voiceNote": voiceNote,
             "micDenied": micDenied,
+            "recalled": recalled,
+            "edited": edited,
             "takePhoto": takePhoto,
             "photoLibrary": photoLibrary,
             "chooseFile": chooseFile,
@@ -620,7 +632,9 @@ public struct HatangChatStrings: Sendable, Hashable {
         recordVoice: "Ghi âm tin nhắn thoại",
         recording: "Đang ghi âm…",
         voiceNote: "Tin nhắn thoại",
-        micDenied: "Không dùng được micro. Hãy cho phép ứng dụng dùng micro trong Cài đặt."
+        micDenied: "Không dùng được micro. Hãy cho phép ứng dụng dùng micro trong Cài đặt.",
+        recalled: "Tin nhắn đã được thu hồi",
+        edited: "đã sửa"
     )
 
     /// English.
@@ -707,7 +721,9 @@ public struct HatangChatStrings: Sendable, Hashable {
         recordVoice: "Record a voice message",
         recording: "Recording…",
         voiceNote: "Voice message",
-        micDenied: "The microphone is not available. Allow the app to use it in Settings."
+        micDenied: "The microphone is not available. Allow the app to use it in Settings.",
+        recalled: "Message recalled",
+        edited: "edited"
     )
 
 }

@@ -169,6 +169,58 @@ final class ChatSocketTests: XCTestCase {
         h.socket.close()
     }
 
+    func testARequestThatTimedOutWhileQueuedIsNeverSent() async {
+        // Lagging network: the socket is still authenticating when the message goes out.
+        let h = Harness()
+        h.socket.connect()
+        await eventually("auth") { !h.connector.connections.isEmpty && h.conn.sentTypes == ["auth"] }
+        let reply = await h.request(.send(clientId: "c1", content: "hi"))
+        h.socket.send(.typing(conversationId: "c", on: true))
+        await h.elapse(10_000)
+        await eventually("timeout") { reply.current != nil }
+        XCTAssertEqual(code(reply.current), "timeout")
+        // Ready arrives late: the given-up request stays dropped, fire-and-forget frames still go out.
+        h.conn.push(FakeSocketConnection.readyFrame())
+        await eventually("flushed") { h.conn.sentTypes.count == 2 }
+        await settle()
+        XCTAssertEqual(h.conn.sentTypes, ["auth", "typing"])
+        h.socket.close()
+    }
+
+    func testARequestQueuedWhenTheConnectionDropsIsNotSentOnTheNextOne() async {
+        let h = Harness()
+        h.socket.connect()
+        await eventually("auth") { !h.connector.connections.isEmpty && h.conn.sentTypes == ["auth"] }
+        let reply = await h.request(.send(clientId: "c1", content: "hi"))
+        h.conn.serverClose(1006)
+        await eventually("rejected") { reply.current != nil }
+        XCTAssertEqual(code(reply.current), "closed")
+        await h.elapse(500)
+        await eventually("auth again") { h.connector.connections.count == 2 && h.conn.sentTypes == ["auth"] }
+        h.conn.push(FakeSocketConnection.readyFrame())
+        await eventually("ready") { h.socket.ready }
+        await settle()
+        XCTAssertEqual(h.conn.count("message.send"), 0)
+        // A retry (same client_id, new request id) is the only copy that goes out.
+        _ = await h.request(.send(clientId: "c1", content: "hi"))
+        XCTAssertEqual(h.conn.count("message.send"), 1)
+        XCTAssertEqual(h.conn.lastOfType("message.send")?.d.s("client_id"), "c1")
+        h.socket.close()
+    }
+
+    func testCloseDropsQueuedRequestsSoAReconnectDoesNotSendThem() async {
+        let h = Harness()
+        h.socket.connect()
+        await eventually("auth") { !h.connector.connections.isEmpty && h.conn.sentTypes == ["auth"] }
+        let reply = await h.request(.send(clientId: "c1", content: "hi"))
+        h.socket.close()
+        await eventually("rejected") { reply.current != nil }
+        XCTAssertEqual(code(reply.current), "closed")
+        await h.open()
+        XCTAssertEqual(h.conn.count("message.send"), 0)
+        h.socket.close()
+    }
+
     func testPingsEvery25sOnceReady() async {
         let h = Harness()
         await h.open()

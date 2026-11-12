@@ -89,6 +89,32 @@ final class RowsTests: XCTestCase {
         XCTAssertFalse(r2.askEmail)
     }
 
+    func testRecalledAndEditedMessages() {
+        let qr: JSONObject = ["kind": "quick_replies", "options": ["Yes", "No"], "recalled": true]
+        var recalled = MessageDto(id: "r", conversationId: "c", seq: 1, senderType: .agent, content: "secret", createdAt: now, senderName: "Lan", attachments: [Attachment(id: "f", name: "a.png", size: 1, type: "image/png")], metadata: qr)
+        recalled.metadata?["edited"] = true
+        let rows = buildRows(state([
+            .message(recalled),
+            msg("e", 2, .agent, at: now, name: "Lan", metadata: ["edited": true, "edited_at": "2026-10-03T09:59:00.000Z"]),
+            msg("p", 3, .agent, at: now),
+        ]), strings: strings, now: now, timeZone: utc)
+        guard case .message(let r) = rows[1], case .message(let e) = rows[2], case .message(let p) = rows[3] else { return XCTFail() }
+        XCTAssertTrue(r.recalled)
+        XCTAssertFalse(r.edited)
+        XCTAssertEqual(r.message.content, "")
+        XCTAssertEqual(r.message.attachments, [])
+        XCTAssertNil(r.card)
+        XCTAssertNil(r.senderLabel)
+        XCTAssertFalse(e.recalled)
+        XCTAssertTrue(e.edited)
+        XCTAssertEqual(e.message.content, "e")
+        XCTAssertFalse(p.edited)
+        XCTAssertFalse(p.recalled)
+        XCTAssertEqual(HatangChatStrings.vi.recalled, "Tin nhắn đã được thu hồi")
+        XCTAssertEqual(HatangChatStrings.vi.edited, "đã sửa")
+        XCTAssertEqual(HatangChatStrings.en.edited, "edited")
+    }
+
     func testQuickRepliesOnlyOnTheNewestItem() {
         let qr: JSONObject = ["kind": "quick_replies", "options": ["Yes", "No"]]
         let rows = buildRows(state([

@@ -46,6 +46,9 @@ public enum HatangEvent: Sendable, Hashable {
     case messageReceived(MessageDto)
     /// A message from this visitor was stored (echo, possibly from another device).
     case messageSent(MessageDto)
+    /// A message already shown changed: the team edited it (`isEdited`), recalled it (`isRecalled`) or
+    /// removed a file from it. It replaces the earlier copy; it is not new, so it is not unread.
+    case messageUpdated(MessageDto)
     /// The conversation's status changed.
     case conversationStatus(conversationId: String, status: ConversationStatus)
     /// A conversion the host may forward to its analytics.

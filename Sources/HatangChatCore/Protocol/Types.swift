@@ -364,6 +364,15 @@ public struct MessageDto: Codable, Sendable, Hashable {
     /// Written by this app's user.
     public var isMine: Bool { senderType == .visitor }
 
+    /// The team recalled (unsent) it: `metadata.recalled`. Text and files are gone; show a placeholder.
+    public var isRecalled: Bool { metadata?.bool("recalled") ?? false }
+
+    /// The team edited it after sending: `metadata.edited` (and not recalled since).
+    public var isEdited: Bool { !isRecalled && (metadata?.bool("edited") ?? false) }
+
+    /// When it was last edited (`metadata.edited_at`), if the gateway said.
+    public var editedAt: Date? { metadata?.date("edited_at") }
+
     /// Parses the wire shape.
     public init(json j: JSONObject) {
         typealias K = CodingKeys

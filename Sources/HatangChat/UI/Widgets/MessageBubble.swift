@@ -17,12 +17,16 @@ struct MessageBubble<Footer: View>: View {
     var onAttachmentExpired: (() -> Void)?
     var hideEmptyBubble = false
     var footerFullWidth = false
+    /// The team recalled it: a muted italic placeholder instead of the text and files.
+    var recalled = false
+    /// The team edited it: "edited" joins the label under it.
+    var edited = false
     @ViewBuilder var footer: () -> Footer
     @Environment(\.chat) private var chat
 
     var body: some View {
         let t = chat.theme
-        let empty = message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && message.attachments.isEmpty && upload == nil
+        let empty = !recalled && message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && message.attachments.isEmpty && upload == nil
         let who = mine ? chat.strings.you : (senderLabel ?? chat.strings.team)
         VStack(alignment: mine ? .trailing : .leading, spacing: 2) {
             if !(hideEmptyBubble && empty) {
@@ -43,8 +47,8 @@ struct MessageBubble<Footer: View>: View {
             } else {
                 row { footer() }
             }
-            if senderLabel != nil || showSeen {
-                Text(showSeen ? chat.strings.read : (senderLabel ?? ""))
+            if let meta = metaLine {
+                Text(meta)
                     .font(.caption)
                     .foregroundStyle(t.palette.muted)
                     .padding(.horizontal, Spacing.xs)
@@ -52,6 +56,12 @@ struct MessageBubble<Footer: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: mine ? .trailing : .leading)
         .padding(.vertical, 2)
+    }
+
+    /// "Seen" or the sender's name, then "edited" when the team changed the message.
+    private var metaLine: String? {
+        let parts = [showSeen ? chat.strings.read : senderLabel, edited ? chat.strings.edited : nil].compactMap { $0 }.filter { !$0.isEmpty }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     private var shape: UnevenRoundedRectangle {
@@ -72,7 +82,12 @@ struct MessageBubble<Footer: View>: View {
 
     private func bubble(fg: Color) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            if !message.content.isEmpty {
+            if recalled {
+                Text(chat.strings.recalled)
+                    .font(.body.italic())
+                    .foregroundStyle(fg.opacity(0.7))
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if !message.content.isEmpty {
                 Text(formattedText(message.content))
                     .font(.body)
                     .foregroundStyle(fg)

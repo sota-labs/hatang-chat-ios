@@ -15,6 +15,14 @@ All notable changes to the `HatangChat` Swift package are documented here. The f
 - `HatangChatCore`: `SiteConfig.voiceMessages` (false when an older gateway does not send it); `VoiceNote` (`maxDuration`, `minDuration`, `fileName(at:)`, `showsMic(voiceMessages:text:hasStaged:enabled:)`, `keeps(duration:)`, `reachedLimit(_:)`, `clock(_:)`, `isVoiceNoteName(_:)`); `isAudioUpload(mimeType:name:)`, `Attachment.isAudio` / `isVoiceNote`, `UploadSource.isAudio` / `isVoiceNote` / `voiceNote(_:at:)`. `audio/webm` and `audio/ogg` join `uploadMimeTypes` (the gateway accepts them).
 - `HatangChatStrings.recordVoice`, `recording`, `voiceNote`, `micDenied` (vi/en). The memberwise `HatangChatStrings.init` takes them as new trailing arguments with English defaults, so existing calls still compile.
 - **Integrators:** the host app must add `NSMicrophoneUsageDescription` to its Info.plist when voice messages are on (iOS ends the app the first time the mic is used without it), for example "Để gửi tin nhắn thoại cho bộ phận hỗ trợ." / "To send voice messages to support." The microphone permission is asked for the first time the customer taps the mic; if it is refused, the chat shows `micDenied`. The example app's Info.plist has the key.
+- The team can edit, recall or remove a file from a message they sent, and the chat follows: the message changes in place, a recalled one shows a muted italic "Tin nhắn đã được thu hồi" / "Message recalled", an edited one gets a small "đã sửa" / "edited" label under it, and a removed file disappears. A change is not a new message: no unread count, read receipt, VoiceOver announcement or conversion.
+- `HatangEvent.messageUpdated(MessageDto)`: a message already shown changed (edited, recalled or a file removed). **Hosts with an exhaustive `switch` over `HatangEvent` need a case (or `default`) for it.** `messageReceived` / `messageSent` are no longer emitted again for the same message.
+- `MessageDto.isRecalled`, `isEdited`, `editedAt` (from `metadata.recalled`, `metadata.edited`, `metadata.edited_at`).
+- `HatangChatStrings.recalled`, `edited` (vi/en). The memberwise `HatangChatStrings.init` takes them as new trailing arguments with English defaults.
+
+### Fixed
+
+- A message sent while the connection was still being made and given up on (10 s timeout, or the connection dropped first) no longer goes out later when the socket comes back. It used to wait in the socket's queue after the bubble showed "failed", so tapping retry delivered it twice on a slow network. Retries keep the message's `client_id`.
 
 ## [0.4.1] - 2026-11-03
 
