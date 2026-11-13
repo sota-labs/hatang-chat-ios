@@ -84,7 +84,7 @@ struct ConversationBody: View {
                     }
                     BrandingLine()
                 }
-                .background(t.palette.surface)
+                .background(state.conversation?.status == .closed ? t.palette.surface : t.palette.bg)
             }
         }
         .background(t.palette.bg)

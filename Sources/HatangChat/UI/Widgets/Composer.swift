@@ -2,9 +2,10 @@
 import HatangChatCore
 import SwiftUI
 
-/// The text field, the attach menu (photo library, files) and the send button. When the site allows voice
-/// notes the send button is a mic while the field is empty; while recording, the field becomes the
-/// recording row (cancel, timer) and the button sends the clip.
+/// Like the web widget (and Crisp): one rounded box with the text field on top and a tool row below —
+/// the attach menu (photo library, files), the mic while the field is empty and voice notes are on, and
+/// the send button. Its border takes the brand colour while typing or recording; while recording, the
+/// field becomes the timer and the row holds delete and send.
 struct Composer: View {
     @Binding var text: String
     let enabled: Bool
@@ -19,85 +20,93 @@ struct Composer: View {
     /// Stops the recording: `true` sends it, `false` throws it away.
     var onStopRecording: (Bool) -> Void = { _ in }
     @Environment(\.chat) private var chat
-    @ScaledMetric(relativeTo: .body) private var sendSize: CGFloat = 40
+    @ScaledMetric(relativeTo: .body) private var sendSize: CGFloat = 34
 
     var body: some View {
         let t = chat.theme
         let canSend = enabled && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let recording = recordingSince != nil
         let showsMic = !recording && VoiceNote.showsMic(voiceMessages: voiceMessages, text: text, enabled: enabled)
-        VStack(spacing: 0) {
-            Divider().overlay(t.palette.border)
-            HStack(alignment: .bottom, spacing: Spacing.sm) {
-                Menu {
-                    Button(action: onPickPhoto) { Label(chat.strings.photoLibrary, systemImage: "photo.on.rectangle") }
-                    Button(action: onPickFile) { Label(chat.strings.chooseFile, systemImage: "paperclip") }
-                } label: {
-                    Image(systemName: "plus.circle")
-                        .font(.title2)
-                        .foregroundStyle(t.palette.muted)
-                        .frame(minWidth: minTouch, minHeight: minTouch)
-                }
-                .disabled(!enabled || recording)
-                .accessibilityLabel(chat.strings.attach)
-
-                if let recordingSince {
-                    RecordingRow(startedAt: recordingSince) { onStopRecording(false) }
-                        .padding(.trailing, Spacing.xs)
-                        .background(t.palette.raised, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
-                } else {
-                    TextField(chat.strings.placeholder, text: $text, axis: .vertical)
-                        .lineLimit(1...5)
-                        .font(.body)
-                        .foregroundStyle(t.palette.fg)
-                        .textInputAutocapitalization(.sentences)
-                        .submitLabel(.send)
-                        .focused(focused)
-                        .disabled(!enabled)
-                        .onSubmit(send)
-                        .onChange(of: text) { _, new in
-                            if new.count > Limits.visitorText { text = String(new.prefix(Limits.visitorText)) }
-                        }
-                        .padding(.horizontal, Spacing.lg)
-                        .padding(.vertical, Spacing.sm + 2)
-                        .frame(minHeight: minTouch)
-                        .background(t.palette.raised, in: RoundedRectangle(cornerRadius: Radius.lg, style: .continuous))
-                }
-
-                if showsMic {
-                    Button(action: onRecord) {
-                        Image(systemName: "mic.fill")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(t.onAccent)
-                            .frame(width: max(sendSize, minTouch), height: max(sendSize, minTouch))
-                            .background(t.accent, in: Circle())
+        let active = recording || focused.wrappedValue
+        let sendOn = canSend || recording
+        let box = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        VStack(alignment: .leading, spacing: 0) {
+            if let recordingSince {
+                RecordingRow(startedAt: recordingSince)
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.top, Spacing.md)
+                    .padding(.bottom, Spacing.xs)
+                    .frame(minHeight: minTouch)
+            } else {
+                TextField(chat.strings.placeholder, text: $text, axis: .vertical)
+                    .lineLimit(1...5)
+                    .font(.body)
+                    .foregroundStyle(t.palette.fg)
+                    .tint(t.accent)
+                    .textInputAutocapitalization(.sentences)
+                    .submitLabel(.send)
+                    .focused(focused)
+                    .disabled(!enabled)
+                    .onSubmit(send)
+                    .onChange(of: text) { _, new in
+                        if new.count > Limits.visitorText { text = String(new.prefix(Limits.visitorText)) }
                     }
-                    .accessibilityLabel(chat.strings.recordVoice)
-                } else if recording {
-                    Button { onStopRecording(true) } label: {
-                        Image(systemName: "arrow.up")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(t.onAccent)
-                            .frame(width: max(sendSize, minTouch), height: max(sendSize, minTouch))
-                            .background(t.accent, in: Circle())
-                    }
-                    .accessibilityLabel(chat.strings.send)
-                } else {
-                    Button(action: send) {
-                        Image(systemName: "arrow.up")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(canSend ? t.onAccent : t.palette.muted)
-                            .frame(width: max(sendSize, minTouch), height: max(sendSize, minTouch))
-                            .background(canSend ? t.accent : t.palette.raised, in: Circle())
-                    }
-                    .disabled(!canSend)
-                    .accessibilityLabel(chat.strings.send)
-                }
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.top, Spacing.md)
+                    .padding(.bottom, Spacing.xs)
+                    .frame(minHeight: minTouch)
             }
-            .padding(.leading, Spacing.xs)
-            .padding(.trailing, Spacing.sm)
-            .padding(.vertical, Spacing.sm)
+            HStack(spacing: 0) {
+                if recording {
+                    Button { onStopRecording(false) } label: {
+                        tool("trash", color: t.palette.danger)
+                    }
+                    .accessibilityLabel(chat.strings.dismiss)
+                } else {
+                    Menu {
+                        Button(action: onPickPhoto) { Label(chat.strings.photoLibrary, systemImage: "photo.on.rectangle") }
+                        Button(action: onPickFile) { Label(chat.strings.chooseFile, systemImage: "paperclip") }
+                    } label: {
+                        tool("paperclip", color: t.palette.muted)
+                    }
+                    .disabled(!enabled)
+                    .accessibilityLabel(chat.strings.attach)
+                    if showsMic {
+                        Button(action: onRecord) { tool("mic", color: t.palette.muted) }
+                            .accessibilityLabel(chat.strings.recordVoice)
+                    }
+                }
+                Spacer(minLength: 0)
+                Button {
+                    if recording { onStopRecording(true) } else { send() }
+                } label: {
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(sendOn ? t.onAccent : t.palette.dim)
+                        .frame(width: sendSize, height: sendSize)
+                        .background(sendOn ? t.accent : .clear, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .frame(width: minTouch, height: minTouch)
+                        .contentShape(Rectangle())
+                }
+                .disabled(!sendOn)
+                .accessibilityLabel(chat.strings.send)
+            }
+            .padding(.horizontal, Spacing.xs)
         }
+        .background(t.palette.bg, in: box)
+        .overlay(box.strokeBorder(active ? t.accent : t.palette.border, lineWidth: active ? 1.5 : 1))
+        .animation(.easeOut(duration: 0.15), value: active)
+        .padding(.horizontal, Spacing.md)
+        .padding(.top, Spacing.xs)
+        .padding(.bottom, Spacing.sm)
+    }
+
+    private func tool(_ symbol: String, color: Color) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 19))
+            .foregroundStyle(color)
+            .frame(width: minTouch, height: minTouch)
+            .contentShape(Rectangle())
     }
 
     private func send() {

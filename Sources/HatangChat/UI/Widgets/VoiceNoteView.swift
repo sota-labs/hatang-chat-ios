@@ -150,11 +150,10 @@ struct VoiceNoteView: View {
     }
 }
 
-/// The composer while a voice note records: cancel (delete), a pulsing red dot, the m:ss timer and
-/// "Recording…"; the send button next to it stops and sends.
+/// The composer's text area while a voice note records: a pulsing red dot, the m:ss timer and
+/// "Recording…". The tool row below holds delete and send.
 struct RecordingRow: View {
     let startedAt: Date
-    let onCancel: () -> Void
     @Environment(\.chat) private var chat
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var dim = false
@@ -162,13 +161,6 @@ struct RecordingRow: View {
     var body: some View {
         let t = chat.theme
         HStack(spacing: Spacing.sm) {
-            Button(action: onCancel) {
-                Image(systemName: "trash")
-                    .font(.title3)
-                    .foregroundStyle(t.palette.danger)
-                    .frame(width: minTouch, height: minTouch)
-            }
-            .accessibilityLabel(chat.strings.dismiss)
             HStack(spacing: Spacing.sm) {
                 Circle()
                     .fill(Color.red)
@@ -193,7 +185,6 @@ struct RecordingRow: View {
             .accessibilityAddTraits(.updatesFrequently)
             Spacer(minLength: 0)
         }
-        .frame(minHeight: minTouch)
     }
 }
 #endif
