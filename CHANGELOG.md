@@ -4,6 +4,12 @@ All notable changes to the `HatangChat` Swift package are documented here. The f
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-11-13
+
+### Changed
+
+- The composer looks like the web widget's: one rounded box with the text on top and a tool row below (attach menu, mic while the field is empty, send). Its border takes the brand colour while typing or recording; the send button fills with it once there is something to send. The recording timer sits in the box, with delete and send in the row.
+
 ## [0.5.1] - 2026-11-12
 
 ### Changed
